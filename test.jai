@@ -20,6 +20,49 @@ test :: asdasd( asd: string,
 {
 }
 
+is_whitespace :: inline ( c: u8 ) -> bool
+{
+    result := c == #char " " || c == #char "\t" || c == #char "\\"; 
+    return result; 
+}
+
+eat_all_whitespace :: ( tokenizer: *string )
+{
+    while true
+    {
+        if is_whitespace( tokenizer.data[ 0 ] )
+        {
+            advance( tokenizer ); 
+        }
+        else 
+        {
+            break; 
+        }
+    }
+    
+    for all_files
+    {
+        modtime, size, ok := file_modtime_and_size( it ); 
+        assert( ok ); 
+        file_state: File_State; 
+        file_state.modtime = modtime; 
+        file_state.size = size; 
+        current_state, found := table_find( *file_states, it ); 
+        if found
+        {
+            if current_state.modtime != modtime || current_state.size != size
+            {
+                array_add( *files_to_parse, it ); 
+                table_set( *file_states, it, file_state ); 
+            }
+        }
+        else 
+        {
+            array_add( *files_to_parse, it ); 
+            table_set( *file_states, it, file_state ); 
+        }
+    }
+}
 parser_path :: #run get_parser_path(); 
 
 get_parser_path :: () -> string
@@ -31,6 +74,24 @@ get_parser_path :: () -> string
 main :: ()
 {
     
+    target_file, ok = file_open( filename, for_writing = true, keep_existing_content = false ); 
+    
+    if !ok
+    {
+        print( "Failed to open target file: %\n", filename ); 
+        return; 
+    }
+    test :: []int.[ int.[ 1, 
+                          2, 
+                          3 ], 
+                    int.[ 4, 
+                          5, 
+                          6 ] ]; 
+    keywords :: string.[ "if", "else", "return", "for", "while", 
+                         "break", 
+                         "struct", "enum", "enum_flags", "using", "case", . { qwe = "asd" } ]; 
+    
+    test( ASD. { asd = 123, qwe = 456 }, ZXC. { qwe = 123, . { dfg = 456 } }, . { sdf = 987 } ); 
     if c == 
     {
     case #char "("; result.type = .OPEN_PAREN; 
@@ -88,7 +149,7 @@ main :: ()
     }
     
     failed := socket_init(); 
-    if !failed
+    if !failed //asdasd
     {
         print( "socket_init failed\n" ); 
         return; 
@@ -306,7 +367,7 @@ END
                         assert( encoder.length + size <= encoder.allocated_size ); 
                         response: File; 
                         response, ok = file_open( "declarations.response", for_writing = false ); 
-                                       assert( ok ); 
+                        assert( ok ); 
                         success, bytes_read := file_read( response, encoder.at, size ); 
                         assert( success && bytes_read > 0 ); 
                         encoder.length += cast( u32 )bytes_read; 
@@ -346,4 +407,4 @@ END
     closesocket( client_socket ); 
     WSACleanup(); 
 }
-
+ 
