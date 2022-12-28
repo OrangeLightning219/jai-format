@@ -10,8 +10,8 @@ To format a file run `jai-format path/to/your/file.jai`. You can format multiple
 ## Configuration
 There are only 7 configuration options:
 
-* `space_after_comma` - `bool` - if true a space will be inserted after each comma. There are two exceptions for this rule 
-  `cast` and directives. For example a comma won't be inserted in `cast,no_check` or `#string,cr`.
+* `space_after_comma` - `bool` - if true a space will be inserted after each comma. There are two exceptions for this rule: 
+  `cast` and directives. For example a space won't be inserted in `cast,no_check` or `#string,cr`.
 * `spaces_inside_parens` - `bool` - if true a space will be inserted after `(` and before `)` if there is something between them.
 * `spaces_inside_brackets` - `bool` - if true a space will be inserted after `[` and before `]` if there is something between them.
 * `spaces_inside_struct_literals` - `bool` - if true a space will be inserted after '{' and before `}` but only in struct literals.
