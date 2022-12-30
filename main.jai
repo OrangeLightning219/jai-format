@@ -312,8 +312,7 @@ get_token :: ( tokenizer: *string ) -> Token
 
 push_alignment :: () #expand 
 {
-    ok, current_position := file_tell( `target_file );
-    alignment := ( current_position - `last_new_line_position ) - `indent_level * `indent_string.count;
+    alignment := ( `buffer.count - `last_new_line_position ) - `indent_level * `indent_string.count;
     if `alignment_indents.count > 0
     {
         current_alignment := 0;
@@ -342,7 +341,27 @@ peek_token :: inline ( tokenizer: string ) -> Token
 
 write :: ( text: string ) #expand 
 {
-    file_write( *`target_file, text );
+    if `buffer.count + text.count > `max_buffer_size
+    {
+        new_size := 2 * `max_buffer_size;
+        `buffer.data = realloc( `buffer.data, new_size, `max_buffer_size );
+        `max_buffer_size = new_size;
+    }
+    
+    memcpy( `buffer.data + `buffer.count, text.data, text.count );
+    `buffer.count += text.count;
+}
+
+delete_chars :: ( offset: int ) #expand 
+{
+    if offset <= `buffer.count
+    {
+        `buffer.count -= offset;
+    }
+    else 
+    {
+        `buffer.count = 0;
+    }
 }
 
 main :: ()
@@ -412,14 +431,9 @@ main :: ()
         
         file_to_format, ok := read_entire_file( filename );
         
-        target_file: File;
-        target_file, ok = file_open( filename, for_writing = true, keep_existing_content = false );
-        
-        if !ok
-        {
-            print( "Failed to open target file: %\n", filename );
-            return;
-        }
+        max_buffer_size := file_to_format.count;
+        buffer: string;
+        buffer.data = alloc( max_buffer_size );
         
         tokenizer := file_to_format;
         parsing := true;
@@ -459,14 +473,13 @@ main :: ()
                     {
                         offset *= ( max_empty_lines_to_keep );
                     }
-                    file_seek( target_file, -offset, .CURRENT );
+                    delete_chars( offset );
                 }
                 
                 if new_lines_in_row <= max_empty_lines_to_keep + 1
                 {
                     write( text );
-                    ok: bool;
-                    ok, last_new_line_position = file_tell( target_file );
+                    last_new_line_position = buffer.count;
                     for 1..indent_level
                     {
                         write( indent_string );
@@ -488,8 +501,8 @@ main :: ()
                 indent_level += 1;
                 if alignment_indents.count > 0 && previous_token.type == .NEW_LINE
                 {
-                    offset := -alignment_indents[ alignment_indents.count - 1 ];
-                    file_seek( target_file, offset, .CURRENT );
+                    offset := alignment_indents[ alignment_indents.count - 1 ];
+                    delete_chars( offset );
                 }
                 else if previous_token.type != .NEW_LINE && previous_token.type != .KEYWORD
                 {
@@ -513,7 +526,7 @@ main :: ()
                 indent_level -= 1;
                 if previous_token.type == .NEW_LINE
                 {
-                    file_seek( target_file, -indent_string.count, .CURRENT );
+                    delete_chars( indent_string.count );
                 }
                 
                 next_token := peek_token( tokenizer );
@@ -592,7 +605,7 @@ main :: ()
                 }
                 else if text == "case"
                 {
-                    file_seek( target_file, -( indent_string.count ), .CURRENT );
+                    delete_chars( indent_string.count );
                 }
                 
                 write( text );
@@ -668,7 +681,13 @@ main :: ()
             }
             previous_token = token;
         }
-        file_close( *target_file );
+        
+        ok = write_entire_file( filename, buffer );
+        if !ok
+        {
+            print( "Failed to write target file: %\n", filename );
+            return;
+        }
     }
 }
 
