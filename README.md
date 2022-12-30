@@ -35,8 +35,8 @@ if condition1 && (condition2 || condition3
     condition4 ||
     condition5) &&
     condition6
-   {       
-   }
+{       
+}
 ```
 will become this:
 ```
@@ -44,8 +44,8 @@ if condition1 && (condition2 || condition3
                   condition4 ||
                   condition5) &&
    condition6
-   {       
-   }
+{       
+}
 ```
 Note: The alignement only happens if there are new lines in the statements. The formatter will not insert new lines on its own.
 * Variable alignment is not supported. This:
