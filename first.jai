@@ -3,9 +3,11 @@
 #import "File";
 #import "String";
 
-build :: () { 
+build :: ()
+{
     w := compiler_create_workspace( "jai-format" );
-    if !w { 
+    if !w
+    {
         print( "Workspace creation failed.\n" );
         return;
     }
@@ -51,7 +53,7 @@ build :: () {
     
     compiler_end_intercept( w );
     
-    set_build_options_dc( . { do_output = false } );
+    set_build_options_dc( .{ do_output = false } );
 }
 
 #run build();

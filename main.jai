@@ -504,7 +504,7 @@ main :: ()
                     offset := alignment_indents[ alignment_indents.count - 1 ];
                     delete_chars( offset );
                 }
-                else if previous_token.type != .NEW_LINE && previous_token.type != .KEYWORD
+                else if previous_token.type != .NEW_LINE && previous_token.type != .KEYWORD && previous_token != "."
                 {
                     write( " " );
                 }
