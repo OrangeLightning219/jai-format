@@ -267,7 +267,7 @@ get_token :: ( tokenizer: *string ) -> Token
             result.text.count = tokenizer.data - result.text.data;
             
             keywords :: string.[ "if", "else", "return", "for", "while", "break", "inline", 
-                                 "struct", "enum", "enum_flags", "using", "case",  ];
+                                 "struct", "enum", "enum_flags", "using", "case", "then" ];
             for keywords
             {
                 if result == it
