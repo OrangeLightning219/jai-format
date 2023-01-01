@@ -267,7 +267,7 @@ get_token :: ( tokenizer: *string ) -> Token
             result.text.count = tokenizer.data - result.text.data;
             
             keywords :: string.[ "if", "ifx", "else", "return", "for", "while", "break", "continue", "inline", 
-                                 "struct", "enum", "enum_flags", "using", "case", "then" ];
+                                 "struct", "enum", "enum_flags", "using", "case", "then", "xx" ];
             for keywords
             {
                 if result == it
@@ -594,6 +594,8 @@ main :: ()
                    previous_token.type != .KEYWORD && 
                    previous_token.type != .DIRECTIVE && 
                    previous_token.type != .OPERATOR && 
+                   previous_token.type != .OPEN_PAREN &&
+                   previous_token.type != .COMMA &&
                    previous_token.type != .UNKNOWN
                 {
                     write( " " );
