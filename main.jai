@@ -266,7 +266,7 @@ get_token :: ( tokenizer: *string ) -> Token
             }
             result.text.count = tokenizer.data - result.text.data;
             
-            keywords :: string.[ "if", "else", "return", "for", "while", "break", "continue", "inline", 
+            keywords :: string.[ "if", "ifx", "else", "return", "for", "while", "break", "continue", "inline", 
                                  "struct", "enum", "enum_flags", "using", "case", "then" ];
             for keywords
             {
