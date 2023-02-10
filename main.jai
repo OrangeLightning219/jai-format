@@ -57,6 +57,7 @@ Token_Type :: enum
     IDENTIFIER;
     KEYWORD;
     DIRECTIVE;
+    NOTE;
     
     NUMBER;
     STRING;
@@ -176,8 +177,6 @@ get_token :: ( tokenizer: *string ) -> Token
     case #char "^";  #through;
         // % %=
     case #char "%";  #through;
-        // > >= 
-    case #char ">";  #through;
         // + +=
     case #char "+";  #through;
         // * *=
@@ -186,7 +185,12 @@ get_token :: ( tokenizer: *string ) -> Token
     case #char "=";
         result.type = .OPERATOR;
         check_next_operator_char( tokenizer, *result,  #char "=" );
-        
+
+        // > >= >>
+    case #char ">";
+        result.type = .OPERATOR;
+        check_next_operator_char( tokenizer, *result,  #char "=",  #char ">" );
+
         // < <= <<
     case #char "<";
         result.type = .OPERATOR;
@@ -222,10 +226,18 @@ get_token :: ( tokenizer: *string ) -> Token
         result.type = .NEW_LINE;
         result.text.count = 2;
         advance( tokenizer );
-        
+
+    case #char "@";
+        result.type = .NOTE;
+        while tokenizer.data[ 0 ] && is_alnum( tokenizer.data[ 0 ] )
+        {
+            advance( tokenizer );
+        }
+        result.text.count = tokenizer.data - result.text.data;
+
     case #char "#";
         result.type = .DIRECTIVE;
-        while tokenizer.data[ 0 ] && ( is_alpha( tokenizer.data[ 0 ] ) || tokenizer.data[ 0 ] == #char "," )
+        while tokenizer.data[ 0 ] && ( is_alnum( tokenizer.data[ 0 ] ) || tokenizer.data[ 0 ] == #char "," )
         {
             if tokenizer.data[ 0 ] == #char ","
             {
@@ -267,7 +279,8 @@ get_token :: ( tokenizer: *string ) -> Token
             result.text.count = tokenizer.data - result.text.data;
             
             keywords :: string.[ "if", "ifx", "else", "return", "for", "while", "break", "continue", "inline", 
-                                 "struct", "enum", "enum_flags", "using", "case", "then", "xx" ];
+                                 "struct", "enum", "enum_flags", "using", "case", "then", "xx", "push_context",
+                                 "defer" ];
             for keywords
             {
                 if result == it
@@ -310,8 +323,9 @@ get_token :: ( tokenizer: *string ) -> Token
     return result;
 }
 
-push_alignment :: () #expand 
+push_alignment :: (is_keyword_alignmet: bool = false) #expand 
 {
+    `was_keyword_alignment = is_keyword_alignmet || `was_keyword_alignment;
     alignment := ( `buffer.count - `last_new_line_position ) - `indent_level * `indent_string.count;
     if `alignment_indents.count > 0
     {
@@ -440,7 +454,8 @@ main :: ()
         
         indent_level := 0;
         alignment_indents: [ .. ]int;
-        
+        was_keyword_alignment := false;
+
         previous_token: Token;
         new_lines_in_row := 0;
         last_new_line_position := 0;
@@ -499,6 +514,7 @@ main :: ()
                 
             case .OPEN_BRACE;
                 indent_level += 1;
+
                 if alignment_indents.count > 0 && previous_token.type == .NEW_LINE
                 {
                     offset := alignment_indents[ alignment_indents.count - 1 ];
@@ -516,7 +532,11 @@ main :: ()
                     write( " " );
                 }
                 
-                pop_alignment();
+                if was_keyword_alignment
+                {
+                    pop_alignment();
+                    was_keyword_alignment = false;
+                }
                 if previous_token == "."
                 {
                     push_alignment();
@@ -583,16 +603,18 @@ main :: ()
                 
             case .COMMA;
                 write( text );
-                if space_after_comma && previous_token != "cast" && previous_token != "xx"
+                if space_after_comma && previous_token != "cast" && previous_token != "xx" && previous_token != "using"
                 {
                     write( " " );
                 }
                 
             case .DIRECTIVE;  #through;
+            case .NOTE; #through;
             case .KEYWORD;
                 if previous_token.type != .NEW_LINE && 
                    previous_token.type != .KEYWORD && 
-                   previous_token.type != .DIRECTIVE && 
+                   previous_token.type != .DIRECTIVE &&
+                   previous_token.type != .NOTE && 
                    previous_token.type != .OPERATOR && 
                    previous_token.type != .OPEN_PAREN &&
                    previous_token.type != .COMMA &&
@@ -613,7 +635,7 @@ main :: ()
                 write( text );
                 
                 next_token := peek_token( tokenizer );
-                if next_token.type != .SEMICOLON
+                if next_token.type != .SEMICOLON && next_token.type != .COMMA
                 {
                     write( " " );
                 }
@@ -632,14 +654,15 @@ main :: ()
                 }
                 else if type == .KEYWORD && ( text == "if" || text == "while" || text == "for" )
                 {
-                    push_alignment();
+                    push_alignment(true);
                 }
                 
             case .OPERATOR;
                 insert_spaces := !( previous_token.type == .OPEN_PAREN || previous_token.type == .COMMA || 
                                     previous_token.type == .OPEN_BRACKET || previous_token.type == .OPERATOR || 
                                     previous_token.type == .COLON || previous_token.type == .NEW_LINE || 
-                                    previous_token.type == .KEYWORD );
+                                    previous_token.type == .KEYWORD || previous_token.type == .DIRECTIVE ||
+                                    previous_token.type == .OPEN_BRACE );
                 
                 if spaces_around_operators && insert_spaces
                 {
