@@ -1,5 +1,6 @@
 #import "Basic";
 #import "File";
+#import "File_Utilities";
 #import "String";
 #import "Reflection";
 
@@ -440,279 +441,301 @@ main :: ()
     
     for 1..args.count - 1
     {
-        print( "Formatting %\n", args[ it ] );
-        filename := args[ it ];
-        
-        file_to_format, ok := read_entire_file( filename );
-        
-        max_buffer_size := file_to_format.count;
-        buffer: string;
-        buffer.data = alloc( max_buffer_size );
-        
-        tokenizer := file_to_format;
-        parsing := true;
-        
-        indent_level := 0;
-        alignment_indents: [ .. ]int;
-        was_keyword_alignment := false;
-
-        previous_token: Token;
-        new_lines_in_row := 0;
-        last_new_line_position := 0;
-        
-        while parsing
+        files := file_list(args[it], true);
+        if files.count > 0 
         {
-            token := get_token( *tokenizer );
-            using token;
-            
-            if type != .NEW_LINE
+            // arg was a directory
+            for files 
             {
-                new_lines_in_row = 0;
+                if ends_with(it, ".jai") 
+                {
+                    format(it, indent_width, indent_string);
+                }
             }
-            
-            if type == 
-            {
-            case .NEW_LINE;
-                new_lines_in_row += 1;
-                
-                next_token := peek_token( tokenizer );
-                if next_token.type == .CLOSE_BRACE && new_lines_in_row > 1
-                {
-                    // skip new line between last statement in block and closing brace
-                    offset := ( indent_level * indent_string.count + text.count );
-                    if new_lines_in_row <= max_empty_lines_to_keep + 1
-                    {
-                        offset *= ( new_lines_in_row - 1 );
-                    }
-                    else 
-                    {
-                        offset *= ( max_empty_lines_to_keep );
-                    }
-                    delete_chars( offset );
-                }
-                
-                if new_lines_in_row <= max_empty_lines_to_keep + 1
-                {
-                    write( text );
-                    last_new_line_position = buffer.count;
-                    for 1..indent_level
-                    {
-                        write( indent_string );
-                    }
-                    
-                    total_alignment := 0;
-                    for alignment_indents
-                    {
-                        total_alignment += it;
-                    }
-                    
-                    for 1..total_alignment
-                    {
-                        write( " " );
-                    }
-                }
-                
-            case .OPEN_BRACE;
-                indent_level += 1;
-
-                if alignment_indents.count > 0 && previous_token.type == .NEW_LINE
-                {
-                    offset := alignment_indents[ alignment_indents.count - 1 ];
-                    delete_chars( offset );
-                }
-                else if previous_token.type != .NEW_LINE && previous_token.type != .KEYWORD && previous_token != "."
-                {
-                    write( " " );
-                }
-                
-                write( text );
-                
-                if ( spaces_inside_struct_literals && previous_token == "." ) || previous_token.type != .NEW_LINE
-                {
-                    write( " " );
-                }
-                
-                if was_keyword_alignment
-                {
-                    pop_alignment();
-                    was_keyword_alignment = false;
-                }
-                if previous_token == "."
-                {
-                    push_alignment();
-                }
-                
-            case .CLOSE_BRACE;
-                indent_level -= 1;
-                if previous_token.type == .NEW_LINE
-                {
-                    delete_chars( indent_string.count );
-                }
-                
-                next_token := peek_token( tokenizer );
-                if spaces_inside_struct_literals && ( next_token.type == .SEMICOLON || 
-                                                      next_token.type == .COMMA || 
-                                                      next_token.type == .OPERATOR || 
-                                                      next_token.type == .CLOSE_PAREN || 
-                                                      next_token.type == .CLOSE_BRACKET || 
-                                                      next_token.type == .CLOSE_BRACE )
-                {
-                    write( " " );
-                }
-                
-                write( text );
-                pop_alignment();
-                
-            case .OPEN_PAREN;
-                next_token := peek_token( tokenizer );
-                write( text );
-                if spaces_inside_parens && next_token.type != .CLOSE_PAREN
-                {
-                    write( " " );
-                }
-                push_alignment();
-                
-            case .CLOSE_PAREN;
-                pop_alignment();
-                if spaces_inside_parens && previous_token.type != .OPEN_PAREN
-                {
-                    write( " " );
-                }
-                write( text );
-                
-            case .OPEN_BRACKET;
-                next_token := peek_token( tokenizer );
-                write( text );
-                if spaces_inside_brackets && next_token.type != .CLOSE_BRACKET
-                {
-                    write( " " );
-                }
-                push_alignment();
-                
-            case .CLOSE_BRACKET;
-                if spaces_inside_brackets && previous_token.type != .OPEN_BRACKET
-                {
-                    write( " " );
-                }
-                write( text );
-                pop_alignment();
-                
-            case .COLON;
-                write( text );
-                write( " " );
-                
-            case .COMMA;
-                write( text );
-                if space_after_comma && previous_token != "cast" && previous_token != "xx" && previous_token != "using"
-                {
-                    write( " " );
-                }
-                
-            case .DIRECTIVE;  #through;
-            case .NOTE; #through;
-            case .KEYWORD;
-                if previous_token.type != .NEW_LINE && 
-                   previous_token.type != .KEYWORD && 
-                   previous_token.type != .DIRECTIVE &&
-                   previous_token.type != .NOTE && 
-                   previous_token.type != .OPERATOR && 
-                   previous_token.type != .OPEN_PAREN &&
-                   previous_token.type != .COMMA &&
-                   previous_token.type != .UNKNOWN
-                {
-                    write( " " );
-                }
-                
-                if type == .DIRECTIVE
-                {
-                    text = replace( text, " ", "" );
-                }
-                else if text == "case"
-                {
-                    delete_chars( indent_string.count );
-                }
-                
-                write( text );
-                
-                next_token := peek_token( tokenizer );
-                if next_token.type != .SEMICOLON && next_token.type != .COMMA
-                {
-                    write( " " );
-                }
-                
-                if type == .DIRECTIVE && begins_with( text, "#string" )
-                {
-                    string_delimiter := get_token( *tokenizer );
-                    while token != string_delimiter
-                    {
-                        token = get_token( *tokenizer );
-                    }
-                    here_string: string;
-                    here_string.data = string_delimiter.text.data;
-                    here_string.count = ( token.text.data - string_delimiter.text.data ) + string_delimiter.text.count;
-                    write( here_string );
-                }
-                else if type == .KEYWORD && ( text == "if" || text == "while" || text == "for" )
-                {
-                    push_alignment(true);
-                }
-                
-            case .OPERATOR;
-                insert_spaces := !( previous_token.type == .OPEN_PAREN || previous_token.type == .COMMA || 
-                                    previous_token.type == .OPEN_BRACKET || previous_token.type == .OPERATOR || 
-                                    previous_token.type == .COLON || previous_token.type == .NEW_LINE || 
-                                    previous_token.type == .KEYWORD || previous_token.type == .DIRECTIVE ||
-                                    previous_token.type == .OPEN_BRACE );
-                
-                if spaces_around_operators && insert_spaces
-                {
-                    write( " " );
-                }
-                
-                write( text );
-                
-                if spaces_around_operators && ( insert_spaces || text == "::" )
-                {
-                    write( " " );
-                }
-                
-                if alignment_indents.count == 0 && ( text == ":=" || text == "=" )
-                {
-                    push_alignment();
-                }
-                
-            case .SEMICOLON;
-                write( text );
-                next_token := peek_token( tokenizer );
-                if next_token.type != .NEW_LINE
-                {
-                    write( " " );
-                }
-                pop_alignment();
-                
-            case .END_OF_STREAM;
-                parsing = false;
-                print( "End of parsing\n" );
-                
-            case .COMMENT;
-                if previous_token.type != .SEMICOLON && previous_token.type != .NEW_LINE
-                {
-                    write( " " );
-                }
-                write( text );
-                
-            case;
-                write( text );
-            }
-            previous_token = token;
-        }
-        
-        ok = write_entire_file( filename, buffer );
-        if !ok
+        } 
+        else 
         {
-            print( "Failed to write target file: %\n", filename );
-            return;
+            if ends_with(args[it], ".jai") 
+            {
+               format(args[it], indent_width, indent_string);
+            }
         }
     }
 }
+
+
+format :: (filename: string, indent_width: int, indent_string: string) {
+    print( "Formatting %\n", filename );
+    file_to_format, ok := read_entire_file( filename );
+    
+    max_buffer_size := file_to_format.count;
+    buffer: string;
+    buffer.data = alloc( max_buffer_size );
+    
+    tokenizer := file_to_format;
+    parsing := true;
+    
+    indent_level := 0;
+    alignment_indents: [ .. ]int;
+    was_keyword_alignment := false;
+
+    previous_token: Token;
+    new_lines_in_row := 0;
+    last_new_line_position := 0;
+    
+    while parsing
+    {
+        token := get_token( *tokenizer );
+        using token;
+        
+        if type != .NEW_LINE
+        {
+            new_lines_in_row = 0;
+        }
+        
+        if type == 
+        {
+        case .NEW_LINE;
+            new_lines_in_row += 1;
+            
+            next_token := peek_token( tokenizer );
+            if next_token.type == .CLOSE_BRACE && new_lines_in_row > 1
+            {
+                // skip new line between last statement in block and closing brace
+                offset := ( indent_level * indent_string.count + text.count );
+                if new_lines_in_row <= max_empty_lines_to_keep + 1
+                {
+                    offset *= ( new_lines_in_row - 1 );
+                }
+                else 
+                {
+                    offset *= ( max_empty_lines_to_keep );
+                }
+                delete_chars( offset );
+            }
+            
+            if new_lines_in_row <= max_empty_lines_to_keep + 1
+            {
+                write( text );
+                last_new_line_position = buffer.count;
+                for 1..indent_level
+                {
+                    write( indent_string );
+                }
+                
+                total_alignment := 0;
+                for alignment_indents
+                {
+                    total_alignment += it;
+                }
+                
+                for 1..total_alignment
+                {
+                    write( " " );
+                }
+            }
+            
+        case .OPEN_BRACE;
+            indent_level += 1;
+
+            if alignment_indents.count > 0 && previous_token.type == .NEW_LINE
+            {
+                offset := alignment_indents[ alignment_indents.count - 1 ];
+                delete_chars( offset );
+            }
+            else if previous_token.type != .NEW_LINE && previous_token.type != .KEYWORD && previous_token != "."
+            {
+                write( " " );
+            }
+            
+            write( text );
+            
+            if ( spaces_inside_struct_literals && previous_token == "." ) || previous_token.type != .NEW_LINE
+            {
+                write( " " );
+            }
+            
+            if was_keyword_alignment
+            {
+                pop_alignment();
+                was_keyword_alignment = false;
+            }
+            if previous_token == "."
+            {
+                push_alignment();
+            }
+            
+        case .CLOSE_BRACE;
+            indent_level -= 1;
+            if previous_token.type == .NEW_LINE
+            {
+                delete_chars( indent_string.count );
+            }
+            
+            next_token := peek_token( tokenizer );
+            if spaces_inside_struct_literals && ( next_token.type == .SEMICOLON || 
+                                                  next_token.type == .COMMA || 
+                                                  next_token.type == .OPERATOR || 
+                                                  next_token.type == .CLOSE_PAREN || 
+                                                  next_token.type == .CLOSE_BRACKET || 
+                                                  next_token.type == .CLOSE_BRACE )
+            {
+                write( " " );
+            }
+            
+            write( text );
+            pop_alignment();
+            
+        case .OPEN_PAREN;
+            next_token := peek_token( tokenizer );
+            write( text );
+            if spaces_inside_parens && next_token.type != .CLOSE_PAREN
+            {
+                write( " " );
+            }
+            push_alignment();
+            
+        case .CLOSE_PAREN;
+            pop_alignment();
+            if spaces_inside_parens && previous_token.type != .OPEN_PAREN
+            {
+                write( " " );
+            }
+            write( text );
+            
+        case .OPEN_BRACKET;
+            next_token := peek_token( tokenizer );
+            write( text );
+            if spaces_inside_brackets && next_token.type != .CLOSE_BRACKET
+            {
+                write( " " );
+            }
+            push_alignment();
+            
+        case .CLOSE_BRACKET;
+            if spaces_inside_brackets && previous_token.type != .OPEN_BRACKET
+            {
+                write( " " );
+            }
+            write( text );
+            pop_alignment();
+            
+        case .COLON;
+            write( text );
+            write( " " );
+            
+        case .COMMA;
+            write( text );
+            if space_after_comma && previous_token != "cast" && previous_token != "xx" && previous_token != "using"
+            {
+                write( " " );
+            }
+            
+        case .DIRECTIVE;  #through;
+        case .NOTE; #through;
+        case .KEYWORD;
+            if previous_token.type != .NEW_LINE && 
+               previous_token.type != .KEYWORD && 
+               previous_token.type != .DIRECTIVE &&
+               previous_token.type != .NOTE && 
+               previous_token.type != .OPERATOR && 
+               previous_token.type != .OPEN_PAREN &&
+               previous_token.type != .COMMA &&
+               previous_token.type != .UNKNOWN
+            {
+                write( " " );
+            }
+            
+            if type == .DIRECTIVE
+            {
+                text = replace( text, " ", "" );
+            }
+            else if text == "case"
+            {
+                delete_chars( indent_string.count );
+            }
+            
+            write( text );
+            
+            next_token := peek_token( tokenizer );
+            if next_token.type != .SEMICOLON && next_token.type != .COMMA
+            {
+                write( " " );
+            }
+            
+            if type == .DIRECTIVE && begins_with( text, "#string" )
+            {
+                string_delimiter := get_token( *tokenizer );
+                while token != string_delimiter
+                {
+                    token = get_token( *tokenizer );
+                }
+                here_string: string;
+                here_string.data = string_delimiter.text.data;
+                here_string.count = ( token.text.data - string_delimiter.text.data ) + string_delimiter.text.count;
+                write( here_string );
+            }
+            else if type == .KEYWORD && ( text == "if" || text == "while" || text == "for" )
+            {
+                push_alignment(true);
+            }
+            
+        case .OPERATOR;
+            insert_spaces := !( previous_token.type == .OPEN_PAREN || previous_token.type == .COMMA || 
+                                previous_token.type == .OPEN_BRACKET || previous_token.type == .OPERATOR || 
+                                previous_token.type == .COLON || previous_token.type == .NEW_LINE || 
+                                previous_token.type == .KEYWORD || previous_token.type == .DIRECTIVE ||
+                                previous_token.type == .OPEN_BRACE );
+            
+            if spaces_around_operators && insert_spaces
+            {
+                write( " " );
+            }
+            
+            write( text );
+            
+            if spaces_around_operators && ( insert_spaces || text == "::" )
+            {
+                write( " " );
+            }
+            
+            if alignment_indents.count == 0 && ( text == ":=" || text == "=" )
+            {
+                push_alignment();
+            }
+            
+        case .SEMICOLON;
+            write( text );
+            next_token := peek_token( tokenizer );
+            if next_token.type != .NEW_LINE
+            {
+                write( " " );
+            }
+            pop_alignment();
+            
+        case .END_OF_STREAM;
+            parsing = false;
+            print( "End of parsing\n" );
+            
+        case .COMMENT;
+            if previous_token.type != .SEMICOLON && previous_token.type != .NEW_LINE
+            {
+                write( " " );
+            }
+            write( text );
+            
+        case;
+            write( text );
+        }
+        previous_token = token;
+    }
+    
+    ok = write_entire_file( filename, buffer );
+    if !ok
+    {
+        print( "Failed to write target file: %\n", filename );
+        return;
+    }
+}
+
 
