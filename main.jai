@@ -134,7 +134,7 @@ get_token :: ( tokenizer: *string ) -> Token
         
         // / /= // /*
     case #char "/";
-        if check_next_operator_char( tokenizer, *result,  #char "=" )
+        if check_next_operator_char( tokenizer, *result, #char "=" )
         {
             result.type = .OPERATOR;
         }
@@ -185,49 +185,49 @@ get_token :: ( tokenizer: *string ) -> Token
         // = == 
     case #char "=";
         result.type = .OPERATOR;
-        check_next_operator_char( tokenizer, *result,  #char "=" );
-
+        check_next_operator_char( tokenizer, *result, #char "=" );
+        
         // > >= >>
     case #char ">";
         result.type = .OPERATOR;
-        check_next_operator_char( tokenizer, *result,  #char "=",  #char ">" );
-
+        check_next_operator_char( tokenizer, *result, #char "=", #char ">" );
+        
         // < <= <<
     case #char "<";
         result.type = .OPERATOR;
-        check_next_operator_char( tokenizer, *result,  #char "=",  #char "<" );
+        check_next_operator_char( tokenizer, *result, #char "=", #char "<" );
         
         // | || |=
     case #char "|";
         result.type = .OPERATOR;
-        check_next_operator_char( tokenizer, *result,  #char "=",  #char "|" );
+        check_next_operator_char( tokenizer, *result, #char "=", #char "|" );
         
         // & && &=
     case #char "&";
         result.type = .OPERATOR;
-        check_next_operator_char( tokenizer, *result,  #char "=",  #char "&" );
+        check_next_operator_char( tokenizer, *result, #char "=", #char "&" );
         
         // ! != 
     case #char "!";
-        if check_next_operator_char( tokenizer, *result,  #char "=" ) { result.type = .OPERATOR; }
+        if check_next_operator_char( tokenizer, *result, #char "=" ) { result.type = .OPERATOR; }
         else { result.type = .UNKNOWN; }
         
         // : :: :=
     case #char ":";
-        if check_next_operator_char( tokenizer, *result,  #char "=",  #char ":" ) { result.type = .OPERATOR; }
+        if check_next_operator_char( tokenizer, *result, #char "=", #char ":" ) { result.type = .OPERATOR; }
         else { result.type = .COLON; }
         
         // - -= ->
     case #char "-";
         result.type = .OPERATOR;
-        check_next_operator_char( tokenizer, *result,  #char "=",  #char ">" );
+        check_next_operator_char( tokenizer, *result, #char "=", #char ">" );
         
     case #char "\r";
         assert( tokenizer.data[ 0 ] == #char "\n" );
         result.type = .NEW_LINE;
         result.text.count = 2;
         advance( tokenizer );
-
+        
     case #char "@";
         result.type = .NOTE;
         while tokenizer.data[ 0 ] && is_alnum( tokenizer.data[ 0 ] )
@@ -235,7 +235,7 @@ get_token :: ( tokenizer: *string ) -> Token
             advance( tokenizer );
         }
         result.text.count = tokenizer.data - result.text.data;
-
+        
     case #char "#";
         result.type = .DIRECTIVE;
         while tokenizer.data[ 0 ] && ( is_alnum( tokenizer.data[ 0 ] ) || tokenizer.data[ 0 ] == #char "," )
@@ -280,7 +280,7 @@ get_token :: ( tokenizer: *string ) -> Token
             result.text.count = tokenizer.data - result.text.data;
             
             keywords :: string.[ "if", "ifx", "else", "return", "for", "while", "break", "continue", "inline", 
-                                 "struct", "enum", "enum_flags", "using", "case", "then", "xx", "push_context",
+                                 "struct", "enum", "enum_flags", "using", "case", "then", "xx", "push_context", 
                                  "defer" ];
             for keywords
             {
@@ -324,7 +324,7 @@ get_token :: ( tokenizer: *string ) -> Token
     return result;
 }
 
-push_alignment :: (is_keyword_alignmet: bool = false) #expand 
+push_alignment :: ( is_keyword_alignmet: bool = false ) #expand 
 {
     `was_keyword_alignment = is_keyword_alignmet || `was_keyword_alignment;
     alignment := ( `buffer.count - `last_new_line_position ) - `indent_level * `indent_string.count;
@@ -441,30 +441,29 @@ main :: ()
     
     for 1..args.count - 1
     {
-        files := file_list(args[it], true);
-        if files.count > 0 
+        files := file_list( args[ it ], true );
+        if files.count > 0
         {
             // arg was a directory
-            for files 
+            for files
             {
-                if ends_with(it, ".jai") 
+                if ends_with( it, ".jai" )
                 {
-                    format(it, indent_width, indent_string);
+                    format( it, indent_width, indent_string );
                 }
             }
-        } 
+        }
         else 
         {
-            if ends_with(args[it], ".jai") 
+            if ends_with( args[ it ], ".jai" )
             {
-               format(args[it], indent_width, indent_string);
+                format( args[ it ], indent_width, indent_string );
             }
         }
     }
 }
 
-
-format :: (filename: string, indent_width: int, indent_string: string) {
+format :: ( filename: string, indent_width: int, indent_string: string ) { 
     print( "Formatting %\n", filename );
     file_to_format, ok := read_entire_file( filename );
     
@@ -478,7 +477,7 @@ format :: (filename: string, indent_width: int, indent_string: string) {
     indent_level := 0;
     alignment_indents: [ .. ]int;
     was_keyword_alignment := false;
-
+    
     previous_token: Token;
     new_lines_in_row := 0;
     last_new_line_position := 0;
@@ -537,7 +536,7 @@ format :: (filename: string, indent_width: int, indent_string: string) {
             
         case .OPEN_BRACE;
             indent_level += 1;
-
+            
             if alignment_indents.count > 0 && previous_token.type == .NEW_LINE
             {
                 offset := alignment_indents[ alignment_indents.count - 1 ];
@@ -632,15 +631,15 @@ format :: (filename: string, indent_width: int, indent_string: string) {
             }
             
         case .DIRECTIVE;  #through;
-        case .NOTE; #through;
+        case .NOTE;  #through;
         case .KEYWORD;
             if previous_token.type != .NEW_LINE && 
                previous_token.type != .KEYWORD && 
-               previous_token.type != .DIRECTIVE &&
+               previous_token.type != .DIRECTIVE && 
                previous_token.type != .NOTE && 
                previous_token.type != .OPERATOR && 
-               previous_token.type != .OPEN_PAREN &&
-               previous_token.type != .COMMA &&
+               previous_token.type != .OPEN_PAREN && 
+               previous_token.type != .COMMA && 
                previous_token.type != .UNKNOWN
             {
                 write( " " );
@@ -677,14 +676,14 @@ format :: (filename: string, indent_width: int, indent_string: string) {
             }
             else if type == .KEYWORD && ( text == "if" || text == "while" || text == "for" )
             {
-                push_alignment(true);
+                push_alignment( true );
             }
             
         case .OPERATOR;
             insert_spaces := !( previous_token.type == .OPEN_PAREN || previous_token.type == .COMMA || 
                                 previous_token.type == .OPEN_BRACKET || previous_token.type == .OPERATOR || 
                                 previous_token.type == .COLON || previous_token.type == .NEW_LINE || 
-                                previous_token.type == .KEYWORD || previous_token.type == .DIRECTIVE ||
+                                previous_token.type == .KEYWORD || previous_token.type == .DIRECTIVE || 
                                 previous_token.type == .OPEN_BRACE );
             
             if spaces_around_operators && insert_spaces
@@ -737,5 +736,4 @@ format :: (filename: string, indent_width: int, indent_string: string) {
         return;
     }
 }
-
 
