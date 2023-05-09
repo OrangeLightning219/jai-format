@@ -22,7 +22,7 @@ build :: ()
     {
         if arg == "release"
         {
-            set_optimization_level( *options, 2, 0 );
+            set_optimization( *options, .OPTIMIZED );
         }
     }
     
