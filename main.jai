@@ -182,10 +182,10 @@ get_token :: ( tokenizer: *string ) -> Token
     case #char "+";  #through;
         // * *=
     case #char "*";  #through;
-        // = == 
+        // = == =>
     case #char "=";
         result.type = .OPERATOR;
-        check_next_operator_char( tokenizer, *result, #char "=" );
+        check_next_operator_char( tokenizer, *result, #char "=", #char ">" );
         
         // > >= >>
     case #char ">";
