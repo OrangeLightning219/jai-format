@@ -242,8 +242,25 @@ get_token :: ( tokenizer: *string ) -> Token
         {
             if tokenizer.data[ 0 ] == #char ","
             {
-                advance( tokenizer );
-                eat_all_whitespace( tokenizer );
+                result.text.count = tokenizer.data - result.text.data;
+
+                directives_with_comma :: string.["#cast", "#code", "#import", "#type", "#string", "#foreign_library", "#library", "#insert", "#run" ];
+                should_continue := false;
+                for directives_with_comma
+                {
+                    if result == it
+                    {
+                        advance( tokenizer );
+                        eat_all_whitespace( tokenizer );
+                        should_continue = true;
+                        break;
+                    }
+                }
+
+                if !should_continue
+                {
+                    break;
+                }
             }
             else 
             {
@@ -281,7 +298,7 @@ get_token :: ( tokenizer: *string ) -> Token
             
             keywords :: string.[ "if", "ifx", "else", "return", "for", "while", "break", "continue", "inline", 
                                  "struct", "enum", "enum_flags", "using", "case", "then", "xx", "push_context", 
-                                 "defer" ];
+                                 "defer", "remove" ];
             for keywords
             {
                 if result == it
@@ -725,6 +742,10 @@ format :: ( filename: string, indent_width: int, indent_string: string ) {
             
         case;
             write( text );
+            if previous_token.type == .DIRECTIVE && previous_token == "#poke_name"
+            {
+                write( " " );
+            }
         }
         previous_token = token;
     }
