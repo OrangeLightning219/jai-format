@@ -141,7 +141,6 @@ get_token :: ( tokenizer: *string ) -> Token
         else if tokenizer.data[ 0 ] == #char "/"
         {
             result.type = .COMMENT;
-            advance( tokenizer, 2 );
             while tokenizer.data[ 0 ] && tokenizer.data[ 0 ] != #char "\n"
             {
                 advance( tokenizer );
@@ -181,7 +180,10 @@ get_token :: ( tokenizer: *string ) -> Token
         // + +=
     case #char "+";  #through;
         // * *=
-    case #char "*";  #through;
+    case #char "*";
+        result.type = .OPERATOR;
+        check_next_operator_char( tokenizer, *result, #char "=" );
+
         // = == =>
     case #char "=";
         result.type = .OPERATOR;
@@ -494,7 +496,8 @@ format :: ( filename: string, indent_width: int, indent_string: string ) {
     indent_level := 0;
     alignment_indents: [ .. ]int;
     was_keyword_alignment := false;
-    
+    is_for_expansion := false;
+
     previous_token: Token;
     new_lines_in_row := 0;
     last_new_line_position := 0;
@@ -637,11 +640,25 @@ format :: ( filename: string, indent_width: int, indent_string: string ) {
             pop_alignment();
             
         case .COLON;
+            next_token := peek_token( tokenizer );
             write( text );
-            write( " " );
+            if previous_token != "for"
+            {
+                write( " " );
+            }
+            else if next_token.type == .IDENTIFIER
+            {
+                is_for_expansion = true;
+            }
             
         case .COMMA;
+            if previous_token.type == .COMMA && space_after_comma
+            {
+                delete_chars(1);
+            }
+            
             write( text );
+            
             if space_after_comma && previous_token != "cast" && previous_token != "xx" && previous_token != "using"
             {
                 write( " " );
@@ -742,7 +759,12 @@ format :: ( filename: string, indent_width: int, indent_string: string ) {
             
         case;
             write( text );
-            if previous_token.type == .DIRECTIVE && previous_token == "#poke_name"
+            if is_for_expansion
+            {
+                write( " " );
+                is_for_expansion = false;
+            }
+            else if previous_token.type == .DIRECTIVE && previous_token == "#poke_name"
             {
                 write( " " );
             }
