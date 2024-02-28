@@ -528,6 +528,7 @@ format :: ( filename: string, indent_width: int, indent_string: string )
     alignment_indents: [ .. ]int;
     was_keyword_alignment := false;
     is_for_expansion := false;
+    was_mixed_asignment_and_declaration := false;
 
     previous_token: Token;
     new_lines_in_row := 0;
@@ -745,12 +746,25 @@ format :: ( filename: string, indent_width: int, indent_string: string )
             }
             
         case .OPERATOR;
+            next_token := peek_token( tokenizer );
             insert_spaces := !( previous_token.type == .OPEN_PAREN || previous_token.type == .COMMA || 
                                 previous_token.type == .OPEN_BRACKET || previous_token.type == .OPERATOR || 
                                 previous_token.type == .COLON || previous_token.type == .NEW_LINE || 
                                 previous_token.type == .KEYWORD || previous_token.type == .DIRECTIVE || 
                                 previous_token.type == .OPEN_BRACE );
             
+            if token == "=" && (next_token.type == .COMMA || next_token == ":=")
+            {
+                insert_spaces = false;
+                was_mixed_asignment_and_declaration = true;
+            }
+
+            if token == ":=" && was_mixed_asignment_and_declaration
+            {
+                insert_spaces = true;
+                was_mixed_asignment_and_declaration = false;
+            }
+
             if spaces_around_operators && insert_spaces
             {
                 write( " " );

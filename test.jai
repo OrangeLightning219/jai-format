@@ -82,6 +82,8 @@ main :: ()
     
     target_file, ok = file_open( filename, for_writing = true, keep_existing_content = false );
     
+    asd=, ok := asdasd();
+    asd, ok= := asdasd();
     if !ok
     {
         print( "Failed to open target file: %\n", filename );
