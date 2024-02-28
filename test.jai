@@ -73,6 +73,12 @@ get_parser_path :: () -> string
 
 main :: ()
 {
+    asd := 0b0101010;
+    zxc := 10e2;
+    zxc := 10.5e123;
+    zxc := 10.5e-123;
+    asd := -123.05;
+    qwe := 0xffabcd;
     
     target_file, ok = file_open( filename, for_writing = true, keep_existing_content = false );
     
@@ -89,9 +95,9 @@ main :: ()
                           6 ] ];
     keywords :: string.[ "if", "else", "return", "for", "while", 
                          "break", 
-                         "struct", "enum", "enum_flags", "using", "case", . { qwe = "asd" } ];
+                         "struct", "enum", "enum_flags", "using", "case", .{ qwe = "asd" } ];
     
-    test( ASD. { asd = 123, qwe = 456 }, ZXC. { qwe = 123, . { dfg = 456 } }, . { sdf = 987 } );
+    test( ASD.{ asd = 123, qwe = 456 }, ZXC.{ qwe = 123, .{ dfg = 456 } }, .{ sdf = 987 } );
     if c == 
     {
     case #char "("; result.type = .OPEN_PAREN;
@@ -107,7 +113,7 @@ main :: ()
         
         // / /=
     case #char "/";
-        if check_next_operator_char( tokenizer, *result,  #char "=" )
+        if check_next_operator_char( tokenizer, *result, #char "=" )
         {
             result.type = .OPERATOR;
         }

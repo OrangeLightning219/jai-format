@@ -289,7 +289,7 @@ get_token :: ( tokenizer: *string ) -> Token
         result.text.count = tokenizer.data - result.text.data;
         
     case;
-        if is_alnum( c )
+        if is_alpha( c ) || c == #char "_"
         {
             result.type = .IDENTIFIER;
             while tokenizer.data[ 0 ] && is_alnum( tokenizer.data[ 0 ] )
@@ -313,13 +313,37 @@ get_token :: ( tokenizer: *string ) -> Token
         else if is_digit( c )
         {
             result.type = .NUMBER;
+
             while is_digit( tokenizer.data[ 0 ] )
             {
                 advance( tokenizer );
             }
             
-            if tokenizer.data[ 0 ] == #char "." || tokenizer.data[ 0 ] == #char "b"
+            if tokenizer.data[ 0 ] == #char "."
             {
+                advance( tokenizer );
+                while is_digit( tokenizer.data[ 0 ] )
+                {
+                    advance( tokenizer );
+                }
+            }
+
+            if tokenizer.data[ 0 ] == #char "e"
+            {
+                advance( tokenizer );
+                if tokenizer.data[ 0 ] == #char "-" || tokenizer.data[ 0 ] == #char "+"
+                {
+                    advance( tokenizer );
+                }
+
+                while is_digit( tokenizer.data[ 0 ] )
+                {
+                    advance( tokenizer );
+                }
+            }
+            else if tokenizer.data[ 0 ] == #char "b"
+            {
+                advance( tokenizer );
                 while is_digit( tokenizer.data[ 0 ] )
                 {
                     advance( tokenizer );
@@ -327,6 +351,7 @@ get_token :: ( tokenizer: *string ) -> Token
             }
             else if tokenizer.data[ 0 ] == #char "x"
             {
+                advance( tokenizer );
                 while is_digit( tokenizer.data[ 0 ] ) || is_alpha( tokenizer.data[ 0 ] )
                 {
                     advance( tokenizer );
@@ -460,31 +485,37 @@ main :: ()
     
     for 1..args.count - 1
     {
-        files := file_list( args[ it ], true );
-        if files.count > 0
+        if is_directory( args[ it ] )
         {
-            // arg was a directory
+            files := file_list( args[ it ], true );
             for files
             {
-                if ends_with( it, ".jai" )
-                {
-                    format( it, indent_width, indent_string );
-                }
+                format( it, indent_width, indent_string );
             }
         }
         else 
         {
-            if ends_with( args[ it ], ".jai" )
-            {
-                format( args[ it ], indent_width, indent_string );
-            }
+            format( args[ it ], indent_width, indent_string );
         }
     }
 }
 
-format :: ( filename: string, indent_width: int, indent_string: string ) { 
+format :: ( filename: string, indent_width: int, indent_string: string ) 
+{ 
+    if !ends_with( filename, ".jai" )
+    {
+        print( "Invalid file provided: %\n", filename );
+        return;
+    }
+
     print( "Formatting %\n", filename );
     file_to_format, ok := read_entire_file( filename );
+
+    if !ok
+    {
+        print( "Failed to open file: %\n", filename );
+        return;
+    }
     
     max_buffer_size := file_to_format.count;
     buffer: string;
