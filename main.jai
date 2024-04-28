@@ -123,7 +123,14 @@ get_token :: ( tokenizer: *string ) -> Token
     {
     case #char "("; result.type = .OPEN_PAREN;
     case #char ")"; result.type = .CLOSE_PAREN;
-    case #char "["; result.type = .OPEN_BRACKET;
+    case #char "["; 
+        result.type = .OPEN_BRACKET;
+        if tokenizer.data[0] == #char "]" && tokenizer.data[1] == #char "="
+        {
+            result.type = .OPERATOR;
+            result.text.count = 3;
+            advance(tokenizer, 2);
+        }
     case #char "]"; result.type = .CLOSE_BRACKET;
     case #char "{"; result.type = .OPEN_BRACE;
     case #char "}"; result.type = .CLOSE_BRACE;
@@ -179,11 +186,17 @@ get_token :: ( tokenizer: *string ) -> Token
     case #char "%";  #through;
         // + +=
     case #char "+";  #through;
-        // * *=
+        // * *= *[]
     case #char "*";
         result.type = .OPERATOR;
-        check_next_operator_char( tokenizer, *result, #char "=" );
-
+        if !check_next_operator_char( tokenizer, *result, #char "=" )
+        {
+            if tokenizer.data[0] == #char "[" && tokenizer.data[1] == #char "]"
+            {
+                result.text.count = 3;
+                advance(tokenizer, 2);
+            }
+        }
         // = == =>
     case #char "=";
         result.type = .OPERATOR;
@@ -656,6 +669,10 @@ format :: ( filename: string, indent_width: int, indent_string: string )
             
         case .OPEN_BRACKET;
             next_token := peek_token( tokenizer );
+            if previous_token == "operator"
+            {
+                write( " " );
+            }
             write( text );
             if spaces_inside_brackets && next_token.type != .CLOSE_BRACKET
             {
