@@ -850,8 +850,8 @@ format :: ( filename: string, indent_width: int, indent_string: string )
             if aligning_assigment
             {
                 aligning_assigment = false;
-                pop_alignment();
             }
+            pop_alignment();
             
         case .END_OF_STREAM;
             parsing = false;
