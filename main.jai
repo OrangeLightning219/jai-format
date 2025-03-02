@@ -547,6 +547,11 @@ format :: ( filename: string, indent_width: int, indent_string: string )
     new_lines_in_row := 0;
     last_new_line_position := 0;
     
+    inside_note: bool;
+    inside_note_paren_count: int;
+
+    aligning_assigment: bool;
+   
     while parsing
     {
         token := get_token( *tokenizer );
@@ -556,7 +561,12 @@ format :: ( filename: string, indent_width: int, indent_string: string )
         {
             new_lines_in_row = 0;
         }
-        
+
+        if inside_note && type != .OPEN_PAREN && type != .CLOSE_PAREN
+        {
+            type = .UNKNOWN;
+        }
+
         if type == 
         {
         case .NEW_LINE;
@@ -601,13 +611,14 @@ format :: ( filename: string, indent_width: int, indent_string: string )
             
         case .OPEN_BRACE;
             indent_level += 1;
+            next_token := peek_token( tokenizer );
             
             if alignment_indents.count > 0 && previous_token.type == .NEW_LINE
             {
                 offset := alignment_indents[ alignment_indents.count - 1 ];
                 delete_chars( offset );
             }
-            else if previous_token.type != .NEW_LINE && previous_token.type != .KEYWORD && previous_token != "."
+            else if previous_token.type != .NEW_LINE && previous_token.type != .KEYWORD && previous_token != "." && previous_token != "=>"
             {
                 write( " " );
             }
@@ -653,7 +664,18 @@ format :: ( filename: string, indent_width: int, indent_string: string )
         case .OPEN_PAREN;
             next_token := peek_token( tokenizer );
             write( text );
-            if spaces_inside_parens && next_token.type != .CLOSE_PAREN
+
+            if previous_token.type == .NOTE
+            {
+                inside_note = true;
+            }
+            
+            if inside_note
+            {
+                inside_note_paren_count += 1;
+            }
+
+            if spaces_inside_parens && next_token.type != .CLOSE_PAREN && !inside_note
             {
                 write( " " );
             }
@@ -661,11 +683,20 @@ format :: ( filename: string, indent_width: int, indent_string: string )
             
         case .CLOSE_PAREN;
             pop_alignment();
-            if spaces_inside_parens && previous_token.type != .OPEN_PAREN
+            if spaces_inside_parens && previous_token.type != .OPEN_PAREN && !inside_note
             {
                 write( " " );
             }
             write( text );
+
+            if inside_note
+            {
+                inside_note_paren_count -= 1;
+                if inside_note_paren_count == 0
+                {
+                    inside_note = false;
+                }
+            }
             
         case .OPEN_BRACKET;
             next_token := peek_token( tokenizer );
@@ -719,7 +750,7 @@ format :: ( filename: string, indent_width: int, indent_string: string )
             if previous_token.type != .NEW_LINE && 
                previous_token.type != .KEYWORD && 
                previous_token.type != .DIRECTIVE && 
-               previous_token.type != .NOTE && 
+            //    previous_token.type != .NOTE && 
                previous_token.type != .OPERATOR && 
                previous_token.type != .OPEN_PAREN && 
                previous_token.type != .COMMA && 
@@ -740,7 +771,7 @@ format :: ( filename: string, indent_width: int, indent_string: string )
             write( text );
             
             next_token := peek_token( tokenizer );
-            if next_token.type != .SEMICOLON && next_token.type != .COMMA
+            if next_token.type != .SEMICOLON && next_token.type != .COMMA && type != .NOTE
             {
                 write( " " );
             }
@@ -782,7 +813,7 @@ format :: ( filename: string, indent_width: int, indent_string: string )
                 was_mixed_asignment_and_declaration = false;
             }
 
-            if spaces_around_operators && insert_spaces
+            if spaces_around_operators && insert_spaces && previous_token != "."
             {
                 write( " " );
             }
@@ -797,6 +828,16 @@ format :: ( filename: string, indent_width: int, indent_string: string )
             if alignment_indents.count == 0 && ( text == ":=" || text == "=" )
             {
                 push_alignment();
+                aligning_assigment = true;
+            }
+
+            if token == "=>"
+            {
+                if aligning_assigment
+                {
+                    aligning_assigment = false;
+                    pop_alignment();
+                }
             }
             
         case .SEMICOLON;
@@ -806,7 +847,11 @@ format :: ( filename: string, indent_width: int, indent_string: string )
             {
                 write( " " );
             }
-            pop_alignment();
+            if aligning_assigment
+            {
+                aligning_assigment = false;
+                pop_alignment();
+            }
             
         case .END_OF_STREAM;
             parsing = false;
@@ -821,12 +866,17 @@ format :: ( filename: string, indent_width: int, indent_string: string )
             
         case;
             write( text );
+            next_token := peek_token( tokenizer );
             if is_for_expansion
             {
                 write( " " );
                 is_for_expansion = false;
             }
             else if previous_token.type == .DIRECTIVE && previous_token == "#poke_name"
+            {
+                write( " " );
+            }
+            else if next_token.type != .SEMICOLON && previous_token.type == .DIRECTIVE && previous_token == "#foreign"
             {
                 write( " " );
             }

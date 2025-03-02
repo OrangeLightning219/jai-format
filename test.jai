@@ -185,6 +185,12 @@ END
     args := get_command_line_arguments();
     assert( args.count >= 2 );
     
+    something.proc = ( asd, zxc ) => { 
+        print( "proc" );
+     };
+    
+    something.proc = ( asd, zxc ) => print( "asdasd" );
+    
     p := args[ 1 ];
     port := cast( *u8 )alloc( +p.count + 1 );
     memcpy( port, p.data, p.count );
