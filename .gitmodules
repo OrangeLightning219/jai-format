@@ -1,0 +1,3 @@
+[submodule "modules/jai_parser_fork"]
+	path = modules/jai_parser
+	url = https://github.com/OrangeLightning219/jai_parser.git

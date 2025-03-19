@@ -3,8 +3,12 @@
 #import "File";
 #import "String";
 
+#load "tests/tests.jai";
+
 build :: ()
 {
+    set_build_options_dc( .{ do_output = false } );
+
     w := compiler_create_workspace( "jai-format" );
     if !w
     {
@@ -15,31 +19,44 @@ build :: ()
     options := get_build_options( w );
     options.output_executable_name = "jai-format";
     options.output_path = "build";
+    options.backend = .X64;
+    // options.text_output_flags = .OUTPUT_TIMING_INFO;
+    options.text_output_flags = 0;
     
     args := options.compile_time_command_line;
-    
+
+    tests: bool;
+    release: bool;
     for arg: args
     {
-        if arg == "release"
+        if arg ==
         {
-            set_optimization( *options, .OPTIMIZED );
+        case "test";
+            tests = true;
+        case "release";
+            release = true;
         }
     }
-    
-    files := string.[ "main.jai" ];
-    
-    set_build_options( options, w );
-    
-    compiler_begin_intercept( w );
-    
-    for file: files
+
+	if tests
     {
-        add_build_file( file, w );
-    }
-    
-    compiler_end_intercept( w );
-    
-    set_build_options_dc( .{ do_output = false } );
+        run_tests();
+	} 
+    else 
+    {
+        if release
+        {
+            options.backend = .LLVM;
+            set_optimization( *options, .OPTIMIZED );
+        }
+        
+        set_build_options( options, w );
+        
+        compiler_begin_intercept( w );
+        add_build_file( "main.jai", w );
+        compiler_end_intercept( w );
+	}
 }
 
 #run build();
+

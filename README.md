@@ -2,73 +2,160 @@
 Simple code formatter for jai.
 
 ## Building
-To build the formatter simply run `jai ./first.jai`. This will create the `jai-format.exe` in the `build` folder.
+To build the formatter simply run `jai ./first.jai - release`. This will create the `jai-format.exe` in the `build` folder.
 
 ## Usage
-To format a file run `jai-format path/to/your/file.jai`. You can format multiple files by passing a space separated list of paths as arguments: `jai-format file1.jai path/to/second/file.jai file3.jai`.
+To format a file run `jai-format path/to/your/file.jai`. You can format multiple files by passing a space separated list of paths as arguments: `jai-format file1.jai ./path/to/folder file3.jai`. If a folder is passed as an argument all `.jai` files will be formated in that folder.
+
+There are some CLI parameters you can use to alter the default behaviour:
+```
+-config_file: default = "./.jai-format"
+    Path to a config file that should be used. If not set the formatter will search the current working directory for a .jai-format file. If no config is found the default config will be used.
+
+-recursive: default = false
+    If set and there are directories in the argument list all directories will be formatted recursively.
+
+-silent: default = false     
+    If set no output will be printed other than the final result if -to_stdout is also set.
+
+-to_file: default = false    
+    If set the source file will be overwritten with the new formatted output.
+
+-to_stdout: default = false  
+    If set the formatted output will be printed to standard out.
+
+-verbose: default = false    
+    If set more output information will be printed.
+
+-help, -HELP, -?: Show the list of commands.
+```
+
+You can also use the formatter as a module by directly using the `format_file`, `format_from_string` and `format_from_nodes` functions.
 
 ## Configuration
-There are only 7 configuration options:
+- spaces_inside_parens: default = false\
+    If true a space will be inserted after `(` and before `)` if there is something between them.
 
-* `space_after_comma` - `bool` - if true a space will be inserted after each comma. There are two exceptions for this rule: 
-  `cast` and directives. For example a space won't be inserted in `cast,no_check` or `#string,cr`.
-* `spaces_inside_parens` - `bool` - if true a space will be inserted after `(` and before `)` if there is something between them.
-* `spaces_inside_brackets` - `bool` - if true a space will be inserted after `[` and before `]` if there is something between them.
-* `spaces_inside_struct_literals` - `bool` - if true a space will be inserted after '{' and before `}` but only in struct literals.
-* `spaces_around_operators` - `bool` - if true spaces will be inserted around binary operators.
-* `max_empty_lines_to_keep` - `int` - maximum amount of empty lines that will be kept when formatting.
-* `indent_width` - `int` - amount of spaces to use as indentation.
+```
+    true:                           false:
+        print( "%\n", "test" );         print("%\n", "test");
+```
+
+- spaces_inside_brackets: default = false\
+    If true a space will be inserted after `[` and before `]` in array subscripts. This option doesn't insert spaces inside array literals.
+
+```
+    true:                           false:
+        a := array[ 0 ];                a := array[0];
+```
+
+- spaces_inside_literals: default = false\
+    If true a space will be inserted inside struct and array literals. 
+
+```
+    true:                           false:
+        a := Struct.{ 1, 2, 3 };        a := Struct.{1, 2, 3};
+        b := int.[ 1, 2, 3 ];           b := int.[1, 2, 3];
+```
+
+- spaces_around_operators: default = true\
+    If true spaces will be inserted around binary operators.
+
+```
+    true:                           false:
+        a := 1 + 2;                     a:=1+2;
+```
+- braces_on_new_line: default = false\
+    If true opening braces will be put on a new line.\
+    There is one exception to this option. If a opening and closing braces are on the same line the block will be kept as is.\
+    For example `if true {print("true");}` will remain all on one line.
+
+```
+    true:                           false:
+        if true                         if true {
+        {                               }
+        }
+```
+
+- quick_lambda_brace_on_new_line: default = false\
+    If true the opening brace of a quick lambda will be placed on a new line.\
+    This option ignores the braces_on_new_line option.
+
+```
+    true:                           false:
+        a :: (x, y) =>                  a :: (x, y) => {
+        {                               }
+        }
+```
+
+- else_on_new_line: default = false\
+    If true the else keyword will be placed on a new line after the closing brace.
+
+```
+    true:                           false:
+        if true {                       if true {
+        }                               } else {
+        else {                          }
+        }
+```
+
+- indent_case: default = false\
+    If true case statements will be indented one level instead of staying at the same indentation level as the if keyword.
+
+```
+    true:                           false:
+        if a == {                       if a == {
+            case 1;                     case 1;
+            case;                       case;
+        }                               }
+```
+
+- surround_multiple_returns_with_parens: default = false\
+    If true multiple returns will always be surrounded with parenthesis.\
+    If this option is set to false the formatter will not remove the parenthesis that are already there.
+
+```
+    true:                           false:
+        a :: () -> (int, bool)          a :: ()  -> int, bool
+```
+- insert_space_in_single_line_comments: default = true\
+    If true a space will be added after the // if there isn't already one.\
+    The formatter will not trim the leading whitespace in the comments.
+
+```
+    true:                           false:
+        // comment                      //comment
+```
+- max_empty_lines_to_keep: default = 1\
+    Maximum amount of empty lines that will be kept when formatting.\
+    Empty lines at the beginning of a scope will be removed regardless of what this option is set to.\
+    For example:
+```
+    if true {                           if true {
+                                            print("true");
+        print("true");    --------->    }
+    }
+```
+
+- indent_width: default = 4\
+    Amount of spaces to use as indentation.
+
 
 To change the configuration create a `.jai-format` file in the working directory of the formatter and put your options there. 
-Options should be formatted like this: `option_name = option_value`. Each option should be in a separate line.
-
-Another way of changing the configuration is changing the default values in the `Formatter_Config` struct in `main.jai`. 
-This allows having a custom global configuration without the need for the `.jai-format` file.
+Options should be formatted like this: `option_name option_value`. You can use `#` to comment out lines in the config. See the `.jai-format` file in this repo for an exaxmple configuration.
 
 ## Limitations
-* `if`, `for`, `while` without braces are not supported for now. For example this: `if condition do_something();` will not work and 
-  will become `if conditiondo_something();` This should probably be fixed but for now you can work around this by adding braces: `if condition { do_something(); }`.
-* The formatter won't change the braces placement - this allows having things like this: `if condition { foo(); bar(); }` without adding unnecessary complexity to the code.
-* Parameters, arguments, conditions, assignments will always be aligned. For example this:
-```
-if condition1 && (condition2 || condition3
-    condition4 ||
-    condition5) &&
-    condition6
-{       
-}
-```
-will become this:
-```
-if condition1 && (condition2 || condition3
-                  condition4 ||
-                  condition5) &&
-   condition6
-{       
-}
-```
-Note: The alignement only happens if there are new lines in the statements. The formatter will not insert new lines on its own.
-* Variable alignment is not supported. This:
-```
-a                       := 5;
-some_long_variable_name := 6;
-test                    := "asd";
-```
-will become this:
+- The biggest limitation right now is that the formatter assumes there are no syntax errors in your code. If you try formatting a file that has syntax errors it may or may not work properly. This is not a big issue if you're using the formatter directly in an editor because even if something goes wrong you can easily undo the changes. But when using the formatter as a cli tool with the `-to_file` parameter proceed with caution.
+- Comments in weird places will be rearranged. For example:\
+`test :/*asd*/: (param/*asd*/: int) /*zxc*/ -> /*asd*/ int`\
+will be formatted as:\
+`test :: /*asd*/(param: /*asd*/int) -> /*zxc*//*asd*/int`
 
-```
-a := 5;
-some_long_variable_name := 6;
-test := "asd";
-```
-* `case` statements are indented to the same level as `if`:
-```
-if a ==
-{
-case 1;
-    foo();
-case 2;
-    bar();
-}
-```
-This will probably be changed in the future because I don't like this style of `if case` formatting.
+## What's left to do
+- Don't format if there are syntax errors. This relies on the jai_parser module checking for syntax errors which it currently doesn't.
+- Add `//jai-format:off` and `//jai-format:on` comments that allow disabling the formatter in specific places.
+- Add `//jai-format:config_option=true` comments that allow overriding configuration options in specific places.
+- Add more configuration options:
+    - Forcing braces for single line if statements, for loops, while loops etc.
+    - Alignment mode: disabled, indent only, exact.
+- Neovim plugin

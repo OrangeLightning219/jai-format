@@ -1,0 +1,5 @@
+modules/jai_parser/*
+!modules/jai_parser/*.jai
+!.ignore
+!.gitignore
+!.jai-format
