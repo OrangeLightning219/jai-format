@@ -19,7 +19,7 @@ CLI_Arguments :: struct
     // config_overrides: [..]string; // TODO: Add option to override specific config options. This would require manually parsing the arguments because the Command_Line module currently doesn't support dynamic arrays.
 }
 
-INTERNAL :: true;
+INTERNAL :: false;
 
 global_config: Formatter_Config;
 cli_args: CLI_Arguments;

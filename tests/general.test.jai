@@ -48,7 +48,7 @@ spaces_inside_brackets_and_literals :: () -> Test_Parameters
 {
     using result: Test_Parameters;
     config.spaces_inside_brackets = true;
-    config.spaces_inside_struct_literals = true;
+    config.spaces_inside_literals = true;
     source_code = SOURCE_2;
     expected_output = #string DONE
 test :: () {
