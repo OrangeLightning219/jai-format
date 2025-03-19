@@ -50,7 +50,17 @@ Jai_Formatter :: struct( Parser_Visit_Type: Type = Node_Visit_Data )
     max_buffer_size: int;
 
     using config: Formatter_Config;
+
+    #if FORMATTER_ENABLE_PROFILING
+    {
+        lexing_time: float64;
+        parsing_time: float64;
+        formatting_time: float64;
+    }
 }
+
+FORMATTER_ENABLE_PROFILING :: true;
+// FORMATTER_ENABLE_PROFILING :: false;
 
 init_formatter :: ( f: *Jai_Formatter( $T ), config: Formatter_Config, parser: *Parser( T ) = null )
 {
@@ -88,8 +98,10 @@ format_from_string :: ( config: Formatter_Config, source_code: string, file := "
     init_formatter( *f, config );
 
     log( "Lexing file '%'.", file, flags = .VERBOSE_ONLY );
+    #if FORMATTER_ENABLE_PROFILING { lexing_start := seconds_since_init(); }
     // TODO: Catch lexing/parsing errors and don't format if there are any.
     lexer := create_lexer( source_code, file );
+    #if FORMATTER_ENABLE_PROFILING { f.lexing_time = seconds_since_init() - lexing_start; }
     log( "Lexing file '%' done.", file, flags = .VERBOSE_ONLY );
 
     if lexer.tokens.count == 0
@@ -105,6 +117,7 @@ format_from_string :: ( config: Formatter_Config, source_code: string, file := "
     f.parser = *parser;
 
     log( "Parsing file '%'.", file, flags = .VERBOSE_ONLY );
+    #if FORMATTER_ENABLE_PROFILING { parsing_start := seconds_since_init(); }
     nodes: [ .. ]*Node;
     while !end( parser.lexer )
     {
@@ -114,6 +127,7 @@ format_from_string :: ( config: Formatter_Config, source_code: string, file := "
             array_add( *nodes, node );
         }
     }
+    #if FORMATTER_ENABLE_PROFILING { f.parsing_time = seconds_since_init() - parsing_start; }
     log( "Parsing file '%' done.", file, flags = .VERBOSE_ONLY );
 
     if nodes.count == 0
@@ -129,6 +143,7 @@ format_from_string :: ( config: Formatter_Config, source_code: string, file := "
 format_from_nodes :: ( f: *Jai_Formatter, nodes: []*Node, file := "" ) -> bool, string
 {
     log( "Formatting file '%'.", file, flags = .VERBOSE_ONLY );
+    #if FORMATTER_ENABLE_PROFILING { formatting_start := seconds_since_init(); }
     for nodes
     {
         print_node( f, xx it );
@@ -140,7 +155,18 @@ format_from_nodes :: ( f: *Jai_Formatter, nodes: []*Node, file := "" ) -> bool, 
         print_comment( f );
     }
 
+    #if FORMATTER_ENABLE_PROFILING { f.formatting_time = seconds_since_init() - formatting_start; }
     log( "Formatting file '%' done.", file, flags = .VERBOSE_ONLY );
+
+    #if FORMATTER_ENABLE_PROFILING
+    {
+        total := f.lexing_time + f.parsing_time + f.formatting_time;
+        log( "Lexing time:     %\n", f.lexing_time, flags = .VERBOSE_ONLY );
+        log( "Parsing time:    %\n", f.parsing_time, flags = .VERBOSE_ONLY );
+        log( "Formatting time: %\n", f.formatting_time, flags = .VERBOSE_ONLY );
+        log( "Total time:      %\n", total, flags = .VERBOSE_ONLY );
+    }
+
     result: string = xx f.buffer;
     return true, result;
 }

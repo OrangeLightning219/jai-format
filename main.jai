@@ -70,10 +70,16 @@ main :: ()
 
             if cli_args.to_file
             {
+                #if FORMATTER_ENABLE_PROFILING { write_start := seconds_since_init(); }
                 ok := write_entire_file( it, output );
                 if !ok
                 {
                     log_error( "Failed to write formatted code to file: '%'.", it );
+                }
+                #if FORMATTER_ENABLE_PROFILING
+                {
+                    write_time := seconds_since_init() - write_start;
+                    log_verbose( "Writing time: %\n", write_time );
                 }
             }
         }
