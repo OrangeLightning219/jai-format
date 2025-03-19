@@ -44,7 +44,7 @@ empty_test :: () -> Test_Parameters
     return result;
 } @Test
 
-spaces_inside_brackets_and_literals :: () -> Test_Parameters 
+spaces_inside_brackets_and_literals :: () -> Test_Parameters
 {
     using result: Test_Parameters;
     config.spaces_inside_brackets = true;
@@ -64,12 +64,12 @@ test :: () {
     a := list[ 0 ] + list[ 3 ];
     b := list2d[ 0 ][ 2 ];
 }
-DONE
+DONE;
+
     return result;
 } @Test
 
-
-braces_on_new_line :: () -> Test_Parameters 
+braces_on_new_line :: () -> Test_Parameters
 {
     using result: Test_Parameters;
     config.braces_on_new_line = true;
@@ -91,11 +91,12 @@ test :: (a: int, b: float) -> bool
         return test(a, test(c, 0));
     }
 }
-DONE
+DONE;
+
     return result;
 } @Test
 
-spaces_around_operators :: () -> Test_Parameters 
+spaces_around_operators :: () -> Test_Parameters
 {
     using result: Test_Parameters;
     config.spaces_around_operators = false;
@@ -112,11 +113,12 @@ test::(a: int, b: float) -> bool {
         return test(a, test(c, 0));
     }
 }
-DONE
+DONE;
+
     return result;
 } @Test
 
-spaces_inside_parens :: () -> Test_Parameters 
+spaces_inside_parens :: () -> Test_Parameters
 {
     using result: Test_Parameters;
     config.spaces_inside_parens = true;
@@ -133,7 +135,46 @@ test :: ( a: int, b: float ) -> bool {
         return test( a, test( c, 0 ) );
     }
 }
-DONE
+DONE;
+
     return result;
 } @Test
 
+COMPOUND :: #string DONE
+test :: () {
+    ok, group_name, rest := split_from_left(it.file, #char ".");
+
+    a, b, c = 1, 2, 3;
+    a, b, c := 1, 2, 3;
+    a=, b, c= := 1, 2, 3;
+    a:, b:, c = 1, 2, 3;
+
+    a, b, c = test(1, 2, x.y);
+    a, b, c := test(1, 2, x.y);
+    a=, b, c= := test(1, 2, x.y);
+    a:, b:, c = test(1, 2, x.y);
+}
+DONE
+
+compound_declarations :: () -> Test_Parameters
+{
+    using result: Test_Parameters;
+    source_code = COMPOUND;
+    expected_output = #string DONE
+test :: () {
+    ok, group_name, rest := split_from_left(it.file, #char ".");
+
+    a, b, c = 1, 2, 3;
+    a, b, c := 1, 2, 3;
+    a, b:, c = 1, 2, 3;
+    a:, b:, c = 1, 2, 3;
+
+    a, b, c = test(1, 2, x.y);
+    a, b, c := test(1, 2, x.y);
+    a, b:, c = test(1, 2, x.y);
+    a:, b:, c = test(1, 2, x.y);
+}
+DONE;
+
+    return result;
+} @Test

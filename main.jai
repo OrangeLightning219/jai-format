@@ -27,7 +27,7 @@ cli_args: CLI_Arguments;
 
 main :: ()
 {
-    ok:, cli_args=, is_set:, free_arguments := parse_arguments( CLI_Arguments );
+    ok, cli_args=, is_set, free_arguments := parse_arguments( CLI_Arguments );
     #if INTERNAL
     {
         cli_args.to_stdout = true;
@@ -145,7 +145,8 @@ log_nnl :: ( format_string: string, args: ..Any, loc := #caller_location, flags 
 custom_logger :: ( message: string, data: *void, info: Log_Info )
 {
     prefix := "";
-    if info.common_flags == {
+    if info.common_flags ==
+    {
     case .ERROR;
         prefix = "[ERROR]";
     case .WARNING;

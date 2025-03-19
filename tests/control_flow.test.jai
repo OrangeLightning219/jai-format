@@ -40,9 +40,9 @@ test :: () {
         print("true");
     }
 }
-DONE
-    return result;
+DONE;
 
+    return result;
 } @Test
 
 FOR :: #string DONE
@@ -104,12 +104,12 @@ test :: () {
     for <= DO_REVERSE, *= DO_POINTER things print(it);
     for <= DO_REVERSE, *= DO_POINTER things print(it);
 }
-DONE
-    return result;
+DONE;
 
+    return result;
 } @Test
 
-SWITCH ::  #string DONE
+SWITCH :: #string DONE
 test :: () {
     if x == {
         case .TEST1;
@@ -169,9 +169,9 @@ test :: () {
         print("asdasd");
     }
 }
-DONE
-    return result;
+DONE;
 
+    return result;
 } @Test
 
 IF :: #string DONE
@@ -196,7 +196,7 @@ test :: () {
 }
 DONE
 
-if_statements :: () -> Test_Parameters 
+if_statements :: () -> Test_Parameters
 {
     using result: Test_Parameters;
     source_code = IF;
@@ -217,7 +217,8 @@ test :: () {
     if a b;
     else c;
 }
-DONE
+DONE;
+
     return result;
 } @Test
 
@@ -247,7 +248,7 @@ test :: () {
 }
 DONE
 
-ifx_statements :: () -> Test_Parameters 
+ifx_statements :: () -> Test_Parameters
 {
     using result: Test_Parameters;
     source_code = IFX;
@@ -273,6 +274,7 @@ test :: () {
 
     c := ifx b > 0 else 8;
 }
-DONE
+DONE;
+
     return result;
 } @Test
