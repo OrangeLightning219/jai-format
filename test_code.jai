@@ -1,5 +1,4 @@
-test :: ()
+get_operator_string :: ( op: $T ) -> string
+#modify {return T == _Operator || T == Unary_Operation.Operation; }
 {
-    ok:, cli_args, is_set:, free_arguments = parse_arguments( CLI_Arguments );
 }
-

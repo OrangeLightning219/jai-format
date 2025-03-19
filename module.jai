@@ -308,6 +308,8 @@ print_block :: ( f: *Jai_Formatter, b: *Block, is_modify := false )
 {
     // TODO: Make sure that clearing the alignment is ok here. 
     clear_alignment(f);
+    f.previous_line = f.current_line;
+    f.current_line = b.location.l0;
     single_line := b.location.l0 == b.location.l1;
     on_new_line: bool;
     if parent_is(b, .QUICK_LAMBDA)
@@ -316,17 +318,10 @@ print_block :: ( f: *Jai_Formatter, b: *Block, is_modify := false )
     }
     else
     {
-        if b.parent && !is_modify
-        {
-            // NOTE: If we're below the parent in the original code that means insert_new_lines already inserted a proper amount of new lines. 
-            same_line_as_parent := f.previous_print_type == .STRING;
-            // same_line_as_parent := b.location.l0 == b.parent.location.l0;
-            on_new_line = f.braces_on_new_line && (( !same_line_as_parent && single_line) || (!single_line && same_line_as_parent));
-        }
-        else if is_modify
-        {
-            on_new_line = f.braces_on_new_line && !single_line;
-        }
+        // NOTE: If we're below the parent in the original code that means insert_new_lines already inserted a proper amount of new lines. 
+        same_line_as_parent := f.previous_print_type == .STRING;
+        // same_line_as_parent := b.location.l0 == b.parent.location.l0;
+        on_new_line = f.braces_on_new_line && (( !same_line_as_parent && single_line) || (!single_line && same_line_as_parent));
     }
     
     if b.no_aoc
@@ -903,7 +898,7 @@ print_if :: ( f: *Jai_Formatter, i: *If )
         f.new_scope_started = true;
         if !then_is_block then f.indent_level += 1;
         maybe_print_space( f, !then_is_block );
-        print_node( f, i._then );
+        print_node( f, i._then, !then_is_block && i.if_kind == .IFX );
         if !then_is_block then f.indent_level -= 1;
     }
     
@@ -928,8 +923,8 @@ print_if :: ( f: *Jai_Formatter, i: *If )
             f.previous_line = f.current_line;
             f.current_line = i._else.location.l0;
         }
-        maybe_print_space( f, !then_is_block );
-        print_node( f, i._else );
+        maybe_print_space( f, !else_is_block );
+        print_node( f, i._else, !else_is_block && i.if_kind == .IFX );
     }
 }
 
@@ -1365,7 +1360,8 @@ print_directive :: ( f: *Jai_Formatter, d: *$T )
         if d.cr then print(f, ",cr");
         if d.escape_percent then print(f, ",\\\%");
         print(f, " %", d.identifier);
-        print(f, d.string_value);
+        // NOTE: strings can have % in them so this "%" makes sure that the actual string value is passed to print as one of the var args and not as the format string.
+        print(f, "%", d.string_value);
         print(f, "%", d.identifier);
     case Directive_Import;
         print(f, "#import");
@@ -1638,7 +1634,7 @@ print_directive :: ( f: *Jai_Formatter, d: *$T )
         print(f, "#line");
 
     case Directive_Through;
-        print(f, "#through");
+        print(f, "#through;");
 
     case Directive_Exists;
         print(f, "#exists");
