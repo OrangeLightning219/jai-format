@@ -1,4 +1,7 @@
 get_operator_string :: ( op: $T ) -> string
-#modify {return T == _Operator || T == Unary_Operation.Operation; }
 {
+    for tests
+    {
+        ok, group_name, rest := split_from_left(it.file, #char ".");
+    }
 }

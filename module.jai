@@ -1301,11 +1301,6 @@ print_using :: (f: *Jai_Formatter, u: *Using)
 
     space(f);
     print_node(f, u.expression);
-
-    if !parent_is(u, .DIRECTIVE_AS) && !parent_is(u.parent, .STRUCT)
-    {
-        semicolon(f);
-    }
 }
 
 print_quick_lambda :: (f: *Jai_Formatter, l: *Quick_Lambda)
