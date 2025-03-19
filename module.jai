@@ -231,7 +231,8 @@ print_node :: ( f: *Jai_Formatter, node: *Node, no_semicolon := false )
     case .IDENTIFIER; print_identifier( f, xx node, no_semicolon );
     case .DECLARATION; print_declaration( f, xx node );
     case .COMPOUND_DECLARATION; print_compound_declaration(f, xx node);
-    case .COMPOUND_DECLARATION_ITEM; print_compound_declaration_item(f, xx node);
+    // NOTE: This should only be called from print_compound_declaration;
+    // case .COMPOUND_DECLARATION_ITEM; print_compound_declaration_item(f, xx node);
     case .COMMA_SEPARATED_EXPRESSION; print_comma_separated_expression( f, xx node );
     case .NOTE; print_note( f, xx node );
 
@@ -457,44 +458,27 @@ print_declaration :: ( f: *Jai_Formatter, d: *Declaration, compound_type := Comp
 
 print_compound_declaration :: (f: *Jai_Formatter, d: *Compound_Declaration)
 {
-
-    same_type: bool = true;
-    for 0..d.members.count - 2
-    {
-        current := cast(*Compound_Declaration_Item)d.members[it];
-        next := cast(*Compound_Declaration_Item)d.members[it + 1];
-        same_type &= current.item_kind == next.item_kind;
-    }
+    last_type := d.members[d.members.count - 1].(*Compound_Declaration_Item).item_kind;
 
     for d.members
     {
-        print_compound_declaration_item(f, xx it, it_index == d.members.count - 1, same_type);
+        print_compound_declaration_item(f, xx it, it_index == d.members.count - 1, last_type);
         maybe_print_comma(f, d.members, it_index);
-    }
-
-    compound_type: Compound_Declaration_Item.Item_Kind;
-    if same_type
-    {
-        compound_type = d.members[0].(*Compound_Declaration_Item).item_kind;
-    }
-    else
-    {
-        compound_type = d.members[d.members.count - 1].(*Compound_Declaration_Item).item_kind;
     }
 
     if d.type_inst
     {
-        print_declaration(f, d.type_inst, compound_type);
+        print_declaration(f, d.type_inst, last_type);
     }
 
     semicolon(f);
 
 }
 
-print_compound_declaration_item :: (f: *Jai_Formatter, i: *Compound_Declaration_Item, last := false, same_type := false)
+print_compound_declaration_item :: (f: *Jai_Formatter, i: *Compound_Declaration_Item, last: bool,last_type: Compound_Declaration_Item.Item_Kind)
 {
     print_node(f, i.expression);
-    if last || same_type then return;
+    if last || i.item_kind == last_type then return;
     if i.item_kind ==
     {
     case .DECLARATION;
@@ -723,7 +707,8 @@ print_return_value :: ( f: *Jai_Formatter, r: *Return_Value )
 print_return :: ( f: *Jai_Formatter, r: *Return )
 {
     if r.backticked then print( f, "`" );
-    print( f, "return " );
+    print( f, "return" );
+    maybe_print_space(f, r.returns.count > 0);
     push_alignment(f);
     comma_separated_node_list(f, r.returns);
     semicolon(f);
@@ -751,6 +736,14 @@ print_binary_operation :: ( f: *Jai_Formatter, op: *Binary_Operation, no_semicol
         if standalone && !no_semicolon then push_alignment(f);
         print_node( f, op.right );
         if standalone && !no_semicolon then pop_alignment(f);
+    }
+    else
+    {
+        if f.spaces_around_operators
+        {
+            remove_spaces(f, 1);
+            f.previous_print_type = .STRING;
+        }
     }
     
     if !no_semicolon && standalone
@@ -885,14 +878,14 @@ print_if :: ( f: *Jai_Formatter, i: *If )
         print( f, "ifx " );
     }
 
-    if i.if_kind then push_alignment(f);
+    push_alignment(f);
     
     if i.condition
     {
         print_node( f, i.condition, true );
     }
 
-    if i.if_kind then pop_alignment(f);
+    pop_alignment(f);
     
     if i.no_aoc
     {
@@ -1389,15 +1382,25 @@ print_directive :: ( f: *Jai_Formatter, d: *$T )
 
         print(f, " \"%\"", d.module);
         
-        if d.arguments
+        if d.module_parameters
         {
             open_paren(f);
-            for d.arguments
-            {
-                print_node(f, it);
-                maybe_print_comma(f, d.arguments, it_index);
-            }
+            comma_separated_node_list(f, d.module_parameters);
             close_paren(f);
+        }
+
+        if d.program_parameters
+        {
+            if !d.module_parameters
+            {
+                open_paren(f, false);
+                close_paren(f, false);
+            }
+
+            open_paren(f);
+            comma_separated_node_list(f, d.program_parameters);
+            close_paren(f);
+
         }
         semicolon(f);
 
@@ -1543,20 +1546,25 @@ print_directive :: ( f: *Jai_Formatter, d: *$T )
 
     case Directive_Module_Parameters;
         print(f, "#module_parameters");
-        if d.parameters
+        if d.module_parameters
         {
             begin_arguments(f);
             open_paren(f);
-            comma_separated_node_list(f, d.parameters);
+            comma_separated_node_list(f, d.module_parameters);
             close_paren(f);
             end_arguments(f);
         }
 
-        if d.second_parameters
+        if d.program_parameters
         {
+            if !d.module_parameters
+            {
+                open_paren(f, false);
+                close_paren(f, false);
+            }
             begin_arguments(f);
             open_paren(f);
-            comma_separated_node_list(f, d.second_parameters);
+            comma_separated_node_list(f, d.program_parameters);
             close_paren(f);
             end_arguments(f);
         }
@@ -1752,8 +1760,8 @@ insert_new_lines :: (f: *Jai_Formatter, node: *Node)
             line_diff := node_line - f.current_line;
             newlines_to_insert := min(line_diff, f.max_empty_lines_to_keep + 1);
 
-            // NOTE: Notes and blocks (when braces_on_new_line == false) handle new lines on their own
-            if node.kind != .NOTE && !(node.kind == .BLOCK && !f.braces_on_new_line)
+            // NOTE: Notes and blocks handle new lines on their own
+            if node.kind != .NOTE && node.kind != .BLOCK
             {
                 for 1..newlines_to_insert
                 {
@@ -2048,10 +2056,11 @@ pop_alignment :: inline (f: *Jai_Formatter)
         f.current_alignment -= last_alignment;
         assert(f.current_alignment >= 0);
     }
-    else
-    {
-        log_error("Mismatched pop_alignment");
-    }
+    // NOTE: This error message isn't really usefull because after calling clear_alignment any pop_alignment call will be mismatched
+    // else
+    // {
+    //     log_error("Mismatched pop_alignment");
+    // }
 }
 
 clear_alignment :: inline (f: *Jai_Formatter)
