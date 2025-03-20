@@ -19,6 +19,15 @@ test :: () {
         things {
 
         }
+
+    a := Struct.{1, 2, 
+    3, test(a, 
+    b, c), 4, 
+    5};
+
+    a := int.[1, 2, 
+    3, 4, 5, 
+    6, 7];
 }
 DONE
 
@@ -46,6 +55,15 @@ test :: () {
     for value, index:
     things {
     }
+
+    a := Struct.{1, 2,
+    3, test(a,
+    b, c), 4,
+    5};
+
+    a := int.[1, 2,
+    3, 4, 5,
+    6, 7];
 }
 DONE;
 
@@ -76,6 +94,15 @@ test :: () {
     for value, index:
         things {
     }
+
+    a := Struct.{1, 2,
+            3, test(a,
+                b, c), 4,
+            5};
+
+    a := int.[1, 2,
+            3, 4, 5,
+            6, 7];
 }
 DONE;
 
@@ -106,6 +133,15 @@ test :: () {
     for value, index:
         things {
     }
+
+    a := Struct.{1, 2,
+                 3, test(a,
+                         b, c), 4,
+                 5};
+
+    a := int.[1, 2,
+              3, 4, 5,
+              6, 7];
 }
 DONE;
 

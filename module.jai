@@ -175,6 +175,10 @@ format_from_nodes :: ( f: *Jai_Formatter, nodes: []*Node, file := "" ) -> bool, 
         log( "Total time:      %\n", total, flags = .VERBOSE_ONLY );
     }
 
+    if !ends_with( xx f.buffer, "\n" )
+    {
+        maybe_print_new_line( f, true );
+    }
     result: string = xx f.buffer;
     return true, result;
 }

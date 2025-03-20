@@ -30,11 +30,6 @@ test_formatting :: ( params: Test_Parameters ) -> bool
     }
 
     expected_output := params.expected_output;
-    if ends_with( expected_output, "\n" )
-    {
-        expected_output.count -= 1;
-    }
-
     if output != expected_output
     {
         print_color( " [FAILED] - output doesn't match expected output.\n", color = .HI_RED );
