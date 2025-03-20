@@ -23,6 +23,7 @@ Formatter_Config :: struct
     insert_space_in_single_line_comments := true;
     max_empty_lines_to_keep := 1;
     indent_width := 4;
+    no_carriage_return_on_windows := false;
     // TODO: Add option to force braces for single line ifs, fors and whiles
     // TODO: Add alignment options: disabled, indent_only, exact (exact is the only one currently supported)
 }
@@ -959,7 +960,7 @@ print_case :: ( f: *Jai_Formatter, c: *Case )
 
     print( f, "case" );
     maybe_print_space( f, c.expression != null );
-    print_node( f, c.expression );
+    print_node( f, c.expression, true );
     semicolon( f );
 
     is_empty := c.members.count == 0;
@@ -1369,7 +1370,7 @@ print_directive :: ( f: *Jai_Formatter, d: *$T )
 {
     #if T ==
     {
-    case Directive_String;;
+    case Directive_String;
         print( f, "#string" );
         if d.cr then print( f, ",cr" );
         if d.escape_percent then print( f, ",\\\%" );
@@ -1377,7 +1378,7 @@ print_directive :: ( f: *Jai_Formatter, d: *$T )
         // NOTE: strings can have % in them so this "%" makes sure that the actual string value is passed to print as one of the var args and not as the format string.
         print( f, "%", d.string_value );
         print( f, "%", d.identifier );
-    case Directive_Import;;
+    case Directive_Import;
         print( f, "#import" );
 
         if d.import_kind ==
@@ -1413,10 +1414,10 @@ print_directive :: ( f: *Jai_Formatter, d: *$T )
         }
         semicolon( f );
 
-    case Directive_Load;;
+    case Directive_Load;
         print( f, "#load \"%\";", d.file );
 
-    case Directive_Scope;;
+    case Directive_Scope;
         if d.scope_kind ==
         {
         case .EXPORT; print( f, "#scope_export" );
@@ -1429,10 +1430,10 @@ print_directive :: ( f: *Jai_Formatter, d: *$T )
             print_node( f, it );
         }
 
-    case Directive_Context;;
+    case Directive_Context;
         print( f, "#Context" );
 
-    case Directive_Run;;
+    case Directive_Run;
         print( f, "#run" );
         if d.stallable then print( f, ",stallable" );
         if d.host then print( f, ",host" );
@@ -1459,38 +1460,42 @@ print_directive :: ( f: *Jai_Formatter, d: *$T )
             space( f );
         }
         print_node( f, d.expression );
+        if !node_is( d.expression, .BLOCK )
+        {
+            semicolon( f );
+        }
 
-    case Directive_Char;;
+    case Directive_Char;
         print( f, "#char " );
         print_node( f, d.string_literal );
 
-    case Directive_As;;
+    case Directive_As;
         print( f, "#as " );
         print_node( f, d.expression );
 
-    case Directive_Place;;
+    case Directive_Place;
         print( f, "#place " );
         print_node( f, d.expression );
 
-    case Directive_Type;;
+    case Directive_Type;
         print( f, "#type" );
         if d.isa then print( f, ",isa" );
         if d.distinct then print( f, ",distinct" );
         space( f );
         print_node( f, d.expression );
 
-    case Directive_Code;;
+    case Directive_Code;
         print( f, "#code" );
         if d.typed then print( f, ",typed" );
         if d._null then print( f, ",null" );
         space( f );
         print_node( f, d.expression );
 
-    case Directive_Add_Context;;
+    case Directive_Add_Context;
         print( f, "#add_context " );
         print_node( f, d.expression );
 
-    case Directive_Assert;;
+    case Directive_Assert;
         print( f, "#assert " );
         print_node( f, d.condition );
         if d.message
@@ -1499,20 +1504,20 @@ print_directive :: ( f: *Jai_Formatter, d: *$T )
         }
         semicolon( f );
 
-    case Directive_Bake_Arguments;;
+    case Directive_Bake_Arguments;
         print( f, "#bake_arguments " );
         print_node( f, d.expression );
 
-    case Directive_Bake_Constants;;
+    case Directive_Bake_Constants;
         print( f, "#bake_constants " );
         print_node( f, d.expression );
 
-    case Directive_Bytes;;
+    case Directive_Bytes;
         print( f, "#bytes " );
         print_node( f, d.expression );
         semicolon( f );
 
-    case Directive_Library;;
+    case Directive_Library;
         print( f, "#library" );
         if d.link_always then print( f, ",link_always" );
         if d.system then print( f, ",system" );
@@ -1520,11 +1525,11 @@ print_directive :: ( f: *Jai_Formatter, d: *$T )
         if d.no_dll then print( f, ",no_dll" );
         print( f, " \"%\"", d.name );
 
-    case Directive_No_Reset;;
+    case Directive_No_Reset;
         print( f, "#no_reset" );
         print_node( f, d.expression );
 
-    case Directive_Insert;;
+    case Directive_Insert;
         print( f, "#insert" );
 
         if d.scoped
@@ -1547,13 +1552,13 @@ print_directive :: ( f: *Jai_Formatter, d: *$T )
         print_node( f, d.expression );
         if d.type == .UNKNOWN then semicolon( f );
 
-    case Directive_Location;;
+    case Directive_Location;
         print( f, "#location" );
         open_paren( f, d.expression != null );
         print_node( f, d.expression );
         close_paren( f, d.expression != null );
 
-    case Directive_Module_Parameters;;
+    case Directive_Module_Parameters;
         print( f, "#module_parameters" );
         if d.module_parameters
         {
@@ -1580,21 +1585,21 @@ print_directive :: ( f: *Jai_Formatter, d: *$T )
 
         semicolon( f );
 
-    case Directive_Placeholder;;
+    case Directive_Placeholder;
         print( f, "#placeholder " );
         print_node( f, d.expression );
 
-    case Directive_Procedure_Of_Call;;
+    case Directive_Procedure_Of_Call;
         print( f, "#procedure_of_call " );
         print_node( f, d.expression );
 
-    case Directive_Procedure_Name;;
+    case Directive_Procedure_Name;
         print( f, "#procedure_name" );
         open_paren( f, d.expression != null );
         print_node( f, d.expression );
         close_paren( f, d.expression != null );
 
-    case Directive_Program_Export;;
+    case Directive_Program_Export;
         print( f, "#program_export" );
         if d.exported_name
         {
@@ -1603,7 +1608,7 @@ print_directive :: ( f: *Jai_Formatter, d: *$T )
         space( f );
         print_node( f, d.expression );
 
-    case Directive_This;;
+    case Directive_This;
         print( f, "#this" );
         if d.arguments
         {
@@ -1617,39 +1622,39 @@ print_directive :: ( f: *Jai_Formatter, d: *$T )
             }
         }
 
-    case Directive_Poke_Name;;
+    case Directive_Poke_Name;
         print( f, "#poke_name % %;", d.module, d.name );
 
-    case Directive_Dynamic_Specialize;;
+    case Directive_Dynamic_Specialize;
         print( f, "#dynamic_specialize " );
         print_node( f, d.expression );
 
-    case Directive_Caller_Code;;
+    case Directive_Caller_Code;
         print( f, "#caller_code" );
 
-    case Directive_Caller_Location;;
+    case Directive_Caller_Location;
         print( f, "#caller_location" );
 
-    case Directive_File;;
+    case Directive_File;
         print( f, "#file" );
 
-    case Directive_Filepath;;
+    case Directive_Filepath;
         print( f, "#filepath" );
 
-    case Directive_Compile_Time;;
+    case Directive_Compile_Time;
         print( f, "#compile_time" );
 
-    case Directive_Discard;;
+    case Directive_Discard;
         print( f, "#discard " );
         print_node( f, d.expression );
 
-    case Directive_Line;;
+    case Directive_Line;
         print( f, "#line" );
 
-    case Directive_Through;;
+    case Directive_Through;
         print( f, "#through;" );
 
-    case Directive_Exists;;
+    case Directive_Exists;
         print( f, "#exists" );
         open_paren( f );
         print_node( f, d.expression );
@@ -1960,6 +1965,13 @@ maybe_print_new_line :: ( f: *Jai_Formatter, should_print: bool, should_indent :
         if f.previous_print_type == .SPACE
         {
             remove_spaces( f, 1 );
+        }
+        #if OS == .WINDOWS
+        {
+            if !f.no_carriage_return_on_windows
+            {
+                print( f, "\r" );
+            }
         }
         print( f, "\n" );
         f.current_collumn = 0;

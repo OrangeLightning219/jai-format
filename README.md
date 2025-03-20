@@ -140,9 +140,15 @@ You can also use the formatter as a module by directly using the `format_file`, 
 - indent_width: default = 4\
     Amount of spaces to use as indentation.
 
+- no_carriage_return_on_windows: default = false\
+    If true only `\n` will be used as a line ending instead of `\r\n` on windows.
+
 
 To change the configuration create a `.jai-format` file in the working directory of the formatter and put your options there. 
 Options should be formatted like this: `option_name option_value`. You can use `#` to comment out lines in the config. See the `.jai-format` file in this repo for an exaxmple configuration.
+
+## Runing the tests
+There are some automated tests that check the correctness of the formatted output. To run them just run `jai first.jai - tests`.
 
 ## Limitations
 - The biggest limitation right now is that the formatter assumes there are no syntax errors in your code. If you try formatting a file that has syntax errors it may or may not work properly. This is not a big issue if you're using the formatter directly in an editor because even if something goes wrong you can easily undo the changes. But when using the formatter as a cli tool with the `-to_file` parameter proceed with caution.
@@ -151,7 +157,8 @@ Options should be formatted like this: `option_name option_value`. You can use `
 will be formatted as:\
 `test :: /*asd*/(param: /*asd*/int) -> /*zxc*//*asd*/int`
 
-## What's left to do
+## What's left to do (in order of importance)
+- Write more tests
 - Don't format if there are syntax errors. This relies on the jai_parser module checking for syntax errors which it currently doesn't.
 - Add `//jai-format:off` and `//jai-format:on` comments that allow disabling the formatter in specific places.
 - Add `//jai-format:config_option=true` comments that allow overriding configuration options in specific places.

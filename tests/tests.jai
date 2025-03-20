@@ -106,10 +106,10 @@ run_tests :: ()
                 test_builder: String_Builder;
                 print( *test_builder, "#run {\n" );
 
-                BEFORE_TESTS :: #string DONE
-                failed_count: int;
-                total_count: int;
-                ok: bool;
+                BEFORE_TESTS :: #string DONE
+                failed_count: int;
+                total_count: int;
+                ok: bool;
                 DONE
 
                 print( *test_builder, BEFORE_TESTS );
@@ -126,26 +126,26 @@ run_tests :: ()
                         print( *test_builder, "print(\"Running tests: [%]\\n\");", group_name );
                     }
 
-                    FORMAT :: #string DONE
-                    print("[Test]: '%1' ");
-                    ok = test_formatting(%1());
-                    if !ok then failed_count += 1;
-                    total_count += 1;
+                    FORMAT :: #string DONE
+                    print("[Test]: '%1' ");
+                    ok = test_formatting(%1());
+                    if !ok then failed_count += 1;
+                    total_count += 1;
                     DONE
 
                     print( *test_builder, FORMAT, it.name );
                 }
 
-                AFTER_TESTS :: #string,\% DONE
-                if failed_count == 0
-                {
-                    print_color("\nAll tests passed.\n", color = .HI_GREEN);
-                }
-                else
-                {
-                    print_color("\nTests failed: \%.\n", failed_count, color = .HI_RED);
-                    print_color("Tests passed: \%.\n", total_count - failed_count, color = .HI_GREEN);
-                }
+                AFTER_TESTS :: #string,\% DONE
+                if failed_count == 0
+                {
+                    print_color("\nAll tests passed.\n", color = .HI_GREEN);
+                }
+                else
+                {
+                    print_color("\nTests failed: \%.\n", failed_count, color = .HI_RED);
+                    print_color("Tests passed: \%.\n", total_count - failed_count, color = .HI_GREEN);
+                }
                 DONE
 
                 print( *test_builder, AFTER_TESTS );

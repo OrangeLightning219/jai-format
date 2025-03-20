@@ -15,14 +15,14 @@ build :: ()
         print( "Workspace creation failed.\n" );
         return;
     }
-    
+
     options := get_build_options( w );
     options.output_executable_name = "jai-format";
     options.output_path = "build";
     options.backend = .X64;
     // options.text_output_flags = .OUTPUT_TIMING_INFO;
     options.text_output_flags = 0;
-    
+
     args := options.compile_time_command_line;
 
     tests: bool;
@@ -38,25 +38,24 @@ build :: ()
         }
     }
 
-	if tests
+    if tests
     {
         run_tests();
-	} 
-    else 
+    }
+    else
     {
         if release
         {
             options.backend = .LLVM;
             set_optimization( *options, .OPTIMIZED );
         }
-        
+
         set_build_options( options, w );
-        
+
         compiler_begin_intercept( w );
         add_build_file( "main.jai", w );
         compiler_end_intercept( w );
-	}
+    }
 }
 
 #run build();
-
