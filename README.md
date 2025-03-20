@@ -65,6 +65,28 @@ You can also use the formatter as a module by directly using the `format_file`, 
     true:                           false:
         a := 1 + 2;                     a:=1+2;
 ```
+
+- alignment_mode: default = EXACT\
+    Specifies how to align expressions after line breaks.\
+    Things that will be aligned are:
+    - Declarations (`:=`, `::`)
+    - Everything surrounded with `()`, `[]` or `{}`
+    - Expressions after `if`, `while` and `for`
+    
+    Alowed values are:
+    - `DISABLED` - no alignment
+    - `INDENT_ONLY` - use `indent_width` as alignment
+    - `EXACT` - exactly align expressions with their start point
+
+    For more alignment examples see `tests/alignment.test.jai`.
+
+```
+    DISABLED:                           INDENT_ONLY:                           EXACT:
+        test(a, b, c,                       test(a, b, c,                          test(a, b, c, 
+        d(a, b,                                 d(a, b,                                 d(a, b,
+        c), e);                                     c), e);                               c), e);
+```
+
 - braces_on_new_line: default = false\
     If true opening braces will be put on a new line.\
     There is one exception to this option. If a opening and closing braces are on the same line the block will be kept as is.\
@@ -164,5 +186,4 @@ will be formatted as:\
 - Add `//jai-format:config_option=true` comments that allow overriding configuration options in specific places.
 - Add more configuration options:
     - Forcing braces for single line if statements, for loops, while loops etc.
-    - Alignment mode: disabled, indent only, exact.
 - Neovim plugin

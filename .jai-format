@@ -10,4 +10,5 @@ surround_multiple_returns_with_parens false
 insert_space_in_single_line_comments  true
 max_empty_lines_to_keep               1
 indent_width                          4
-no_carraige_return_on_windows         false
+no_carriage_return_on_windows         false
+alignment_mode                        EXACT

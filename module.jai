@@ -15,6 +15,7 @@ Formatter_Config :: struct
     spaces_inside_brackets := false;
     spaces_inside_literals := false;
     spaces_around_operators := true;
+    alignment_mode := Alignment_Mode.EXACT;
     braces_on_new_line := false;
     quick_lambda_brace_on_new_line := false;
     else_on_new_line := false;
@@ -25,7 +26,13 @@ Formatter_Config :: struct
     indent_width := 4;
     no_carriage_return_on_windows := false;
     // TODO: Add option to force braces for single line ifs, fors and whiles
-    // TODO: Add alignment options: disabled, indent_only, exact (exact is the only one currently supported)
+}
+
+Alignment_Mode :: enum
+{
+    DISABLED;
+    INDENT_ONLY;
+    EXACT;
 }
 
 Jai_Formatter :: struct( Parser_Visit_Type: Type = Node_Visit_Data )
@@ -395,6 +402,8 @@ print_block :: ( f: *Jai_Formatter, b: *Block, is_modify := false )
         indent( f );
     }
     print( f, "}" );
+
+    f.new_scope_started = false;
 }
 
 print_identifier :: ( f: *Jai_Formatter, i: *Identifier, no_semicolon := false )
@@ -540,7 +549,7 @@ print_procedure :: ( f: *Jai_Formatter, p: *Procedure )
 
         with_parens := f.surround_multiple_returns_with_parens || p.returns_surrounded_with_parens;
         if with_parens then open_paren( f );
-        if !with_parens then push_alignment( f, 0 );
+        if !with_parens then push_alignment( f );
 
         begin_arguments( f );
         for p.returns
@@ -890,10 +899,11 @@ print_if :: ( f: *Jai_Formatter, i: *If )
     {
     case .IF; #through;
     case .SWITCH;
-        print( f, "if " );
+        print( f, "if" );
     case .IFX;
-        print( f, "ifx " );
+        print( f, "ifx" );
     }
+    space( f );
 
     push_alignment( f );
 
@@ -997,16 +1007,19 @@ print_case :: ( f: *Jai_Formatter, c: *Case )
 
 print_for :: ( f: *Jai_Formatter, _for: *For )
 {
-    print( f, "for " );
+    print( f, "for" );
+    space( f );
     push_alignment( f );
     if _for.is_v2
     {
-        print( f, "#v2 " );
+        print( f, "#v2" );
+        space( f );
     }
 
     if _for.reversed_condition
     {
-        print( f, "<= " );
+        print( f, "<=" );
+        space( f );
         print_node( f, _for.reversed_condition, true );
         has_pointer := _for.by_pointer_condition || _for.by_pointer;
         if has_pointer then print( f, "," );
@@ -1015,7 +1028,8 @@ print_for :: ( f: *Jai_Formatter, _for: *For )
 
     if _for.by_pointer_condition
     {
-        print( f, "*= " );
+        print( f, "*=" );
+        space( f );
         print_node( f, _for.by_pointer_condition, true );
         space( f );
     }
@@ -1037,13 +1051,15 @@ print_for :: ( f: *Jai_Formatter, _for: *For )
 
     if _for.index
     {
-        print( f, ", " );
+        print( f, "," );
+        space( f );
         print_node( f, _for.index, true );
     }
 
     if _for.value
     {
-        print( f, ": " );
+        print( f, ":" );
+        space( f );
     }
 
     if _for.iterator
@@ -1073,7 +1089,8 @@ print_for :: ( f: *Jai_Formatter, _for: *For )
 
 print_while :: ( f: *Jai_Formatter, w: *While )
 {
-    print( f, "while " );
+    print( f, "while" );
+    space( f );
     push_alignment( f );
     print_node( f, w.expression, true );
     maybe_print_space( f, !node_is( w.body, .BLOCK ) );
@@ -1710,8 +1727,8 @@ next_comment :: ( f: *Jai_Formatter, node: *Node, at_end_of_block := false ) -> 
         if at_end_of_block
         {
             if ( c.l0 == node.location.l0 && c.c0 > node.location.c0 ) ||
-             ( c.l0 > node.location.l0 && c.l1 < node.location.l1 ) ||
-             ( c.l1 == node.location.l1 && c.c1 < node.location.c1 )
+               ( c.l0 > node.location.l0 && c.l1 < node.location.l1 ) ||
+               ( c.l1 == node.location.l1 && c.c1 < node.location.c1 )
             {
                 return true;
             }
@@ -1773,8 +1790,9 @@ insert_new_lines :: ( f: *Jai_Formatter, node: *Node )
             line_diff := node_line - f.current_line;
             newlines_to_insert := min( line_diff, f.max_empty_lines_to_keep + 1 );
 
+            standalone_block := node_is( node, .BLOCK ) && parent_is( node, .BLOCK );
             // NOTE: Notes and blocks handle new lines on their own
-            if node.kind != .NOTE && node.kind != .BLOCK
+            if node.kind != .NOTE && ( node.kind != .BLOCK || standalone_block )
             {
                 for 1..newlines_to_insert
                 {
@@ -1796,8 +1814,17 @@ insert_new_lines :: ( f: *Jai_Formatter, node: *Node )
         {
             for 1..lines_added - 1
             {
+                chars_to_remove := 1;
+                #if OS == .WINDOWS
+                {
+                    if !f.no_carriage_return_on_windows
+                    {
+                        // NOTE: Include the \r
+                        chars_to_remove = 2;
+                    }
+                }
                 // NOTE: This should only remove new lines.
-                remove_characters( f, 1 );
+                remove_characters( f, chars_to_remove );
             }
         }
         // NOTE: Only indent after the last empty line.
@@ -1994,16 +2021,9 @@ maybe_print_comma :: ( f: *Jai_Formatter, values: []$T, index: int )
 
 open_paren :: ( f: *Jai_Formatter, extra_condition := true )
 {
-    spaces_to_remove: int;
-    if f.current_alignment > 0 && f.previous_print_type == .INDENT
-    {
-        spaces_to_remove = ifx f.spaces_inside_parens && extra_condition then 2 else 1;
-        remove_spaces( f, spaces_to_remove );
-    }
-
     print( f, "(" );
     maybe_print_space( f, f.spaces_inside_parens && extra_condition );
-    push_alignment( f, -spaces_to_remove );
+    push_alignment( f );
 }
 
 close_paren :: ( f: *Jai_Formatter, extra_condition := true )
@@ -2058,10 +2078,19 @@ print :: ( f: *Jai_Formatter, format: string, args: ..Any )
     f.previous_print_type = .STRING;
 }
 
-push_alignment :: ( f: *Jai_Formatter, extra_alignment: int = 0 )
+push_alignment :: ( f: *Jai_Formatter )
 {
-    amount := f.current_collumn - f.indent_level * f.indent_string.count - f.current_alignment;
-    amount += extra_alignment;
+    amount: int;
+    if f.alignment_mode ==
+    {
+    case .DISABLED;
+        return;
+    case .INDENT_ONLY;
+        amount = f.indent_width;
+    case .EXACT;
+        amount = f.current_collumn - f.indent_level * f.indent_string.count - f.current_alignment;
+    }
+
     assert( amount >= 0 );
     array_add( *f.alignments, amount );
     f.current_alignment += amount;
