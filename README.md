@@ -8,27 +8,27 @@ To build the formatter simply run `jai ./first.jai - release`. This will create 
 To format a file run `jai-format path/to/your/file.jai`. You can format multiple files by passing a space separated list of paths as arguments: `jai-format file1.jai ./path/to/folder file3.jai`. If a folder is passed as an argument all `.jai` files will be formated in that folder.
 
 There are some CLI parameters you can use to alter the default behaviour:
-```
--config_file: default = "./.jai-format"
+- `-config_file`: default = "./.jai-format"\
     Path to a config file that should be used. If not set the formatter will search the current working directory for a .jai-format file. If no config is found the default config will be used.
 
--recursive: default = false
+- `-recursive`: default = false\
     If set and there are directories in the argument list all directories will be formatted recursively.
 
--silent: default = false     
+- `-silent`: default = false\
     If set no output will be printed other than the final result if -to_stdout is also set.
 
--to_file: default = false    
+- `-to_file`: default = false\
     If set the source file will be overwritten with the new formatted output.
 
--to_stdout: default = false  
+- `-to_stdout`: default = false\
     If set the formatted output will be printed to standard out.
 
--verbose: default = false    
+- `-verbose`: default = false\
     If set more output information will be printed.
 
--help, -HELP, -?: Show the list of commands.
-```
+- `-help`, `-HELP`, `-?`: Show the list of commands.
+
+Example usage with some parameters: `jai-format -silent -to_stdout -to_file file.jai`.
 
 You can also use the formatter as a module by directly using the `format_file`, `format_from_string` and `format_from_nodes` functions.
 
