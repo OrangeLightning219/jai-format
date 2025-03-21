@@ -1480,8 +1480,9 @@ print_directive :: ( f: *Jai_Formatter, d: *$T )
         {
             space( f );
         }
+
         print_node( f, d.expression );
-        if !node_is( d.expression, .BLOCK )
+        if !node_is( d.expression, .BLOCK ) && !parent_is( d, .DECLARATION )
         {
             semicolon( f );
         }
