@@ -101,6 +101,7 @@ You can also use the formatter as a module by directly using the `format_file`, 
 
 - quick_lambda_brace_on_new_line: default = false\
     If true the opening brace of a quick lambda will be placed on a new line.\
+    This setting also applies to `#code` blocks.\
     This option ignores the braces_on_new_line option.
 
 ```

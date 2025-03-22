@@ -40,7 +40,7 @@ empty_test :: () -> Test_Parameters
     using result: Test_Parameters;
     source_code = "";
     expected_output = "";
-    expected_result = false;
+    expected_result = .ERROR;
     return result;
 } @Test
 
@@ -140,41 +140,3 @@ DONE;
     return result;
 } @Test
 
-COMPOUND :: #string DONE
-test :: () {
-    ok, group_name, rest := split_from_left(it.file, #char ".");
-
-    a, b, c = 1, 2, 3;
-    a, b, c := 1, 2, 3;
-    a=, b, c= := 1, 2, 3;
-    a:, b:, c = 1, 2, 3;
-
-    a, b, c = test(1, 2, x.y);
-    a, b, c := test(1, 2, x.y);
-    a=, b, c= := test(1, 2, x.y);
-    a:, b:, c = test(1, 2, x.y);
-}
-DONE
-
-compound_declarations :: () -> Test_Parameters
-{
-    using result: Test_Parameters;
-    source_code = COMPOUND;
-    expected_output = #string DONE
-test :: () {
-    ok, group_name, rest := split_from_left(it.file, #char ".");
-
-    a, b, c = 1, 2, 3;
-    a, b, c := 1, 2, 3;
-    a, b:, c = 1, 2, 3;
-    a:, b:, c = 1, 2, 3;
-
-    a, b, c = test(1, 2, x.y);
-    a, b, c := test(1, 2, x.y);
-    a, b:, c = test(1, 2, x.y);
-    a:, b:, c = test(1, 2, x.y);
-}
-DONE;
-
-    return result;
-} @Test

@@ -9,7 +9,7 @@ Test_Parameters :: struct
     config: Formatter_Config;
     source_code: string;
     expected_output: string;
-    expected_result: bool = true;
+    expected_result := Formatter_Status.OK;
 }
 
 test_formatting :: ( params: Test_Parameters ) -> bool
@@ -20,12 +20,12 @@ test_formatting :: ( params: Test_Parameters ) -> bool
     config := params.config;
     // NOTE: Here strings only use \n as line endings. To use \r\n we would need to specify the ,cr modifier on #string. We don't want that to make sure that the tests can be run on any system.
     config.no_carriage_return_on_windows = true;
-    ok, output := format_from_string( config, params.source_code );
+    status, output := format_from_string( config, params.source_code );
     defer free( output.data );
 
-    if ok != params.expected_result
+    if status != params.expected_result
     {
-        print_color( " [FAILED] - expected result was '%' but got '%'.\n", params.expected_result, ok, color = .HI_RED );
+        print_color( " [FAILED] - expected result was '%' but got '%'.\n", params.expected_result, status, color = .HI_RED );
         return false;
     }
 

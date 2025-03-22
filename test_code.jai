@@ -1,33 +1,9 @@
-test :: ()
+test :: () 
 {
-    a := 1 + 2 +
-         ( 3 + 4 +
-           5 + 6 ) * 0.5 +
-         5;
+    result := ( ( source_is_damage && `source.damage == damage ) || 
+                ( !source_is_damage && `source.surface == `source_surface ) ) && 
+              is_set( `target_props, props ) || 
+              ( `target == damage_surface && is_set( `source_props, props ) );
 
-    if a +
-       b * ( a - b /
-             c ) > 0
-    {
-    }
 
-    while a + b * ( a -
-                    b / c ) > 0
-    {
-    }
-
-    for value, index:
-        things
-    {
-    }
-
-    {
-        print();
-    }
-
-    {
-        print();
-    }
-
-    MAX_PROJECTILE_DISTANCE :: #run tiles( 8 );
 }

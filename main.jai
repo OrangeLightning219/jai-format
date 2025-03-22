@@ -52,16 +52,15 @@ main :: ()
         free_arguments = test_files;
     }
 
-    results: Table( string, bool );
-    failed_count: int;
+    results: Table( string, Formatter_Status );
     for free_arguments
     {
-        format :: () #expand
+        format :: ( file: string ) #expand
         {
-            result, output := format_file( global_config, it );
+            status, output := format_file( global_config, file );
             defer free( output.data );
-            if !result then failed_count += 1;
-            table_add( *results, it, result );
+            table_add( *results, file, status );
+            if status != .OK then return;
 
             if cli_args.to_stdout
             {
@@ -71,10 +70,10 @@ main :: ()
             if cli_args.to_file
             {
                 #if FORMATTER_ENABLE_PROFILING { write_start := seconds_since_init(); }
-                ok := write_entire_file( it, output );
+                ok := write_entire_file( file, output );
                 if !ok
                 {
-                    log_error( "Failed to write formatted code to file: '%'.", it );
+                    log_error( "Failed to write formatted code to file: '%'.", file );
                 }
                 #if FORMATTER_ENABLE_PROFILING
                 {
@@ -87,15 +86,23 @@ main :: ()
         if is_directory( it )
         {
             files := file_list( it, cli_args.recursive );
-            for files
+            for file: files
             {
-                format();
+                format( file );
             }
         }
         else
         {
-            format();
+            format( it );
         }
+    }
+
+    failed_count: int;
+    success_count: int;
+    for result, file: results
+    {
+        if result == .ERROR then failed_count += 1;
+        if result == .OK then success_count += 1;
     }
 
     log( "========== Summary ==========" );
@@ -106,20 +113,19 @@ main :: ()
         log( "file%", ifx failed_count == 1 then "" else "s" );
         for result, file: results
         {
-            if !result
+            if result == .ERROR
             {
                 log( "  %", file );
             }
         }
     }
 
-    success_count := results.count - failed_count;
     log_nnl( "Succesfully formatted" );
     with_console_color( .HI_GREEN, log_nnl( " % ", success_count ), .BOLD );
     log( "file%", ifx success_count == 1 then "" else "s" );
     for result, file: results
     {
-        if result
+        if result == .OK
         {
             log( "  %", file );
         }
