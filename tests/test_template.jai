@@ -103,7 +103,8 @@ print_config_diff :: ( config: Formatter_Config )
     default_config: Formatter_Config;
     diff_found: int;
     print( "{" );
-    #insert -> string {
+    #insert -> string
+    {
         builder: String_Builder;
         ti := type_info( Formatter_Config );
         for ti.members

@@ -45,7 +45,7 @@ Jai_Formatter :: struct( Parser_Visit_Type: Type = Node_Visit_Data )
     current_collumn: int;
     current_alignment: int;
     alignments: [ .. ]int;
-    previous_print_type: enum { STRING; NEW_LINE; INDENT; SPACE; };
+    previous_print_type: enum { STRING; NEW_LINE; INDENT; SPACE; }
     new_scope_started: bool;
 
     inside_arguments: bool;
@@ -277,7 +277,7 @@ print_node :: ( f: *Jai_Formatter, node: *Node, no_semicolon := false )
             f.current_line = node.location.l1;
         }
     case .IDENTIFIER; print_identifier( f, xx node, no_semicolon );
-    case .TYPE_INSTANTIATION; print_type_instantiation(f, xx node);
+    case .TYPE_INSTANTIATION; print_type_instantiation( f, xx node );
     case .DECLARATION; print_declaration( f, xx node );
     case .COMPOUND_DECLARATION; print_compound_declaration( f, xx node );
         // NOTE: This should only be called from print_compound_declaration;
@@ -318,7 +318,8 @@ print_node :: ( f: *Jai_Formatter, node: *Node, no_semicolon := false )
     case .INITIALIZE_ZERO;
         print( f, "---" );
     case;
-        #insert -> string {
+        #insert -> string
+        {
             FORMAT :: #string,\% DONE
             if node.kind ==
             {
@@ -360,7 +361,7 @@ print_block :: ( f: *Jai_Formatter, b: *Block, is_modify := false )
     f.current_line = b.location.l0;
     single_line := b.location.l0 == b.location.l1;
     on_new_line: bool;
-    parent_is_lambda_or_code := parent_is( b, .QUICK_LAMBDA ) || parent_is(b, .DIRECTIVE_CODE);
+    parent_is_lambda_or_code := parent_is( b, .QUICK_LAMBDA ) || parent_is( b, .DIRECTIVE_CODE );
     if parent_is_lambda_or_code
     {
         on_new_line = f.quick_lambda_brace_on_new_line && b.members.count != 0;
@@ -410,7 +411,7 @@ print_block :: ( f: *Jai_Formatter, b: *Block, is_modify := false )
     comments_printed := print_comments( f, b, true, new_line_after_brace && is_empty );
 
     maybe_print_space( f, single_line && !is_empty && f.spaces_inside_parens );
-    maybe_print_new_line( f, comments_printed || (!parent_is_lambda_or_code && !single_line && !is_empty) );
+    maybe_print_new_line( f, comments_printed || ( !parent_is_lambda_or_code && !single_line && !is_empty ) );
 
     if !single_line
     {
@@ -433,14 +434,14 @@ print_identifier :: ( f: *Jai_Formatter, i: *Identifier, no_semicolon := false )
     if !f.inside_arguments && standalone_expression( i ) && !no_semicolon then semicolon( f );
 }
 
-print_type_instantiation :: (f: *Jai_Formatter, t: *Type_Instantiation)
+print_type_instantiation :: ( f: *Jai_Formatter, t: *Type_Instantiation )
 {
     if t.pointer
     {
-        print(f, "*");
+        print( f, "*" );
     }
 
-    print_node(f, t.expression);
+    print_node( f, t.expression );
 }
 
 print_declaration :: ( f: *Jai_Formatter, d: *Declaration, compound_type := Compound_Declaration_Item.Item_Kind.DECLARATION )
@@ -455,7 +456,7 @@ print_declaration :: ( f: *Jai_Formatter, d: *Declaration, compound_type := Comp
     if d.type_inst
     {
         print( f, ":" );
-        space(f);
+        space( f );
         print_node( f, d.type_inst );
     }
 
@@ -478,7 +479,7 @@ print_declaration :: ( f: *Jai_Formatter, d: *Declaration, compound_type := Comp
                 op = ifx d.type_inst then "=" else ":=";
             }
         }
-        print(f, op);
+        print( f, op );
 
         maybe_print_space( f, f.spaces_around_operators );
 
@@ -509,18 +510,18 @@ print_declaration :: ( f: *Jai_Formatter, d: *Declaration, compound_type := Comp
     check := d.expression;
     if !d.expression && d.type_inst
     {
-        check = d.type_inst.(*Type_Instantiation).expression;
+        check = d.type_inst.( *Type_Instantiation ).expression;
     }
 
     // TODO: This is ugly. Figure out something better here
-    is_insert_with_block := node_is( check, .DIRECTIVE_INSERT) && node_is( check.( *Directive_Insert).expression, .BLOCK );
+    is_insert_with_block := node_is( check, .DIRECTIVE_INSERT ) && node_is( check.( *Directive_Insert ).expression, .BLOCK );
     is_run_with_block := node_is( check, .DIRECTIVE_RUN ) && node_is( check.( *Directive_Run ).expression, .BLOCK );
     is_code_with_block := node_is( check, .DIRECTIVE_CODE ) && node_is( check.( *Directive_Code ).expression, .BLOCK );
-    ti := d.type_inst.(*Type_Instantiation);
-    not_struct_ti := !ti || (ti && !node_is( ti.expression, .STRUCT ) &&
-                     !node_is( ti.expression, .ENUM ) &&
-                     !node_is( ti.expression, .UNION ));
-    not_struct_exp := !node_is(d.expression, .STRUCT) &&
+    ti := d.type_inst.( *Type_Instantiation );
+    not_struct_ti := !ti || ( ti && !node_is( ti.expression, .STRUCT ) &&
+                              !node_is( ti.expression, .ENUM ) &&
+                              !node_is( ti.expression, .UNION ) );
+    not_struct_exp := !node_is( d.expression, .STRUCT ) &&
                       !node_is( d.expression, .ENUM ) &&
                       !node_is( d.expression, .UNION );
     if !node_is( d.expression, .PROCEDURE ) &&
@@ -533,7 +534,7 @@ print_declaration :: ( f: *Jai_Formatter, d: *Declaration, compound_type := Comp
        // !compound &&
        !f.inside_arguments
     {
-        semicolon(f);
+        semicolon( f );
     }
 
     for d.notes
@@ -736,7 +737,7 @@ print_procedure_call :: ( f: *Jai_Formatter, p: *Procedure_Call, no_semicolon :=
     empty_args := p.arguments.count == 0 && p.context_changes.count == 0;
     open_paren( f, !empty_args );
 
-    begin_arguments(f);
+    begin_arguments( f );
     for p.arguments
     {
         print_node( f, it );
@@ -753,7 +754,7 @@ print_procedure_call :: ( f: *Jai_Formatter, p: *Procedure_Call, no_semicolon :=
         }
     }
 
-    end_arguments(f);
+    end_arguments( f );
 
     close_paren( f, !empty_args );
 
@@ -789,7 +790,6 @@ print_return_value :: ( f: *Jai_Formatter, r: *Return_Value )
     {
         print( f, " #must" );
     }
-
 }
 
 print_return :: ( f: *Jai_Formatter, r: *Return )
@@ -799,7 +799,7 @@ print_return :: ( f: *Jai_Formatter, r: *Return )
     maybe_print_space( f, r.returns.count > 0 );
     push_alignment( f );
     comma_separated_node_list( f, r.returns );
-    if !parent_is(r, .DIRECTIVE_CODE)
+    if !parent_is( r, .DIRECTIVE_CODE )
     {
         semicolon( f );
     }
@@ -811,9 +811,9 @@ print_operator_overload :: ( f: *Jai_Formatter, o: *Operator_Overload )
     print( f, "operator %", get_operator_string( o.operation ) );
     if o.procedure
     {
-        space(f);
-        print(f, "::");
-        space(f);
+        space( f );
+        print( f, "::" );
+        space( f );
         print_node( f, o.procedure );
     }
 }
@@ -1153,7 +1153,6 @@ print_for :: ( f: *Jai_Formatter, _for: *For )
 
     if _for.body
     {
-
         body_is_block := node_is( _for.body, .BLOCK );
         if !body_is_block then f.indent_level += 1;
         f.new_scope_started = true;
@@ -1407,13 +1406,13 @@ print_using :: ( f: *Jai_Formatter, u: *Using )
     else if u.filters
     {
         open_paren( f );
-        begin_arguments(f);
+        begin_arguments( f );
         for u.filters
         {
             print_node( f, it );
             maybe_print_comma( f, u.filters, it_index );
         }
-        end_arguments(f);
+        end_arguments( f );
         close_paren( f );
     }
 
@@ -1511,7 +1510,7 @@ print_directive :: ( f: *Jai_Formatter, d: *$T )
             close_paren( f );
         }
 
-        if !parent_is(d, .DECLARATION)
+        if !parent_is( d, .DECLARATION )
         {
             semicolon( f );
         }
@@ -1564,6 +1563,11 @@ print_directive :: ( f: *Jai_Formatter, d: *$T )
 
         print_node( f, d.expression );
 
+        if standalone_expression( d ) && !node_is( d.expression, .BLOCK )
+        {
+            semicolon( f );
+        }
+
     case Directive_Char;
         print( f, "#char " );
         print_node( f, d.string_literal );
@@ -1591,13 +1595,13 @@ print_directive :: ( f: *Jai_Formatter, d: *$T )
         if d._null then print( f, ",null" );
         space( f );
 
-        if f.inside_arguments && !node_is(d.expression, .BLOCK)
+        if f.inside_arguments && !node_is( d.expression, .BLOCK )
         {
             f.inside_code_argument = true;
             f.inside_code_argument_count += 1;
         }
         print_node( f, d.expression );
-        if f.inside_arguments && !node_is(d.expression, .BLOCK)
+        if f.inside_arguments && !node_is( d.expression, .BLOCK )
         {
             f.inside_code_argument_count -= 1;
             f.inside_code_argument = f.inside_code_argument_count != 0;
@@ -1662,7 +1666,7 @@ print_directive :: ( f: *Jai_Formatter, d: *$T )
 
         maybe_print_space( f, d.type == .UNKNOWN );
         print_node( f, d.expression );
-        if d.type == .UNKNOWN && standalone_expression(d) then semicolon( f );
+        if d.type == .UNKNOWN && standalone_expression( d ) then semicolon( f );
 
     case Directive_Location;
         print( f, "#location" );
@@ -1738,13 +1742,13 @@ print_directive :: ( f: *Jai_Formatter, d: *$T )
         print( f, "#poke_name % ", d.module );
         if d.operator_overload
         {
-            print_node(f, d.operator_overload);
+            print_node( f, d.operator_overload );
         }
         else
         {
-            print(f, "%", d.name);
+            print( f, "%", d.name );
         }
-        semicolon(f);
+        semicolon( f );
 
     case Directive_Dynamic_Specialize;
         print( f, "#dynamic_specialize " );
@@ -1788,7 +1792,7 @@ print_directive :: ( f: *Jai_Formatter, d: *$T )
     }
 }
 
-print_comment :: ( f: *Jai_Formatter)
+print_comment :: ( f: *Jai_Formatter )
 {
     c := f.parser.lexer.comments[ f.current_comment_index ];
     f.current_comment_index += 1;
@@ -1855,7 +1859,7 @@ print_comments :: ( f: *Jai_Formatter, node: *Node, at_end_of_block := false, re
         if remove_line && !line_removed
         {
             // NOTE: Workaround for empty blocks that have comments.
-            remove_new_line(f);
+            remove_new_line( f );
             line_removed = true;
         }
 
@@ -1888,12 +1892,13 @@ print_operator :: ( f: *Jai_Formatter, op: $T )
 
 standalone_expression :: ( e: *Node ) -> bool
 {
-    return parent_is( e, .BLOCK ) || 
-           parent_is( e, .CASE ) || 
-           parent_is( e, .IF ) || 
-           parent_is( e, .FOR ) || 
+    return parent_is( e, .BLOCK ) ||
+           parent_is( e, .CASE ) ||
+           parent_is( e, .IF ) ||
+           parent_is( e, .FOR ) ||
            parent_is( e, .WHILE ) ||
-           parent_is( e, .USING );
+           parent_is( e, .USING ) ||
+           e.parent == null;
 }
 
 insert_new_lines :: ( f: *Jai_Formatter, node: *Node )
@@ -1932,7 +1937,7 @@ insert_new_lines :: ( f: *Jai_Formatter, node: *Node )
         {
             for 1..lines_added - 1
             {
-                remove_new_line(f);
+                remove_new_line( f );
             }
         }
         // NOTE: Only indent after the last empty line.
@@ -2249,7 +2254,7 @@ remove_characters :: ( f: *Jai_Formatter, count: int )
     f.buffer.count -= count;
 }
 
-remove_new_line :: (f: *Jai_Formatter)
+remove_new_line :: ( f: *Jai_Formatter )
 {
     chars_to_remove := 1;
     #if OS == .WINDOWS
