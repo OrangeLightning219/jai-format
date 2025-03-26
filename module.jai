@@ -52,6 +52,7 @@ Jai_Formatter :: struct( Parser_Visit_Type: Type = Node_Visit_Data )
     inside_arguments_count: int;
     inside_code_argument: bool;
     inside_code_argument_count: int;
+    aligned_inside_assignment: bool;
 
     current_comment_index: int;
 
@@ -411,7 +412,7 @@ print_block :: ( f: *Jai_Formatter, b: *Block, is_modify := false )
     comments_printed := print_comments( f, b, true, new_line_after_brace && is_empty );
 
     maybe_print_space( f, single_line && !is_empty && f.spaces_inside_parens );
-    maybe_print_new_line( f, comments_printed || ( !parent_is_lambda_or_code && !single_line && !is_empty ) );
+    maybe_print_new_line( f, comments_printed || ( !single_line && !is_empty ) );
 
     if !single_line
     {
@@ -830,9 +831,12 @@ print_binary_operation :: ( f: *Jai_Formatter, op: *Binary_Operation, no_semicol
     standalone := standalone_expression( op );
     if op.right
     {
-        if standalone && !no_semicolon then push_alignment( f );
+        if is_operator_assignment(op.operation) 
+        {
+            f.aligned_inside_assignment = true;
+            push_alignment( f );
+        }
         print_node( f, op.right );
-        if standalone && !no_semicolon then pop_alignment( f );
     }
     else
     {
@@ -846,6 +850,11 @@ print_binary_operation :: ( f: *Jai_Formatter, op: *Binary_Operation, no_semicol
     if !no_semicolon && standalone
     {
         semicolon( f );
+        if f.aligned_inside_assignment
+        {
+            f.aligned_inside_assignment = false;
+            pop_alignment(f);
+        }
     }
 }
 
@@ -2067,6 +2076,31 @@ get_operator_string :: ( op: $T ) -> string
     return result;
 }
 
+is_operator_assignment :: (op: _Operator) -> bool 
+{
+    if op == 
+    {
+    case .ASSIGN;                          return true;
+    case .IS_EQUAL;                          return true;
+    case .PIPE_EQUAL;                        return true;
+    case .PLUS_EQUAL;                        return true;
+    case .MINUS_EQUAL;                       return true;
+    case .MOD_EQUAL;                         return true;
+    case .DIV_EQUAL;                         return true;
+    case .TIMES_EQUAL;                       return true;
+    case .BITWISE_AND_ASSIGNMENT;            return true;
+    case .LOGICAL_AND_ASSIGNMENT;            return true;
+    case .BITWISE_XOR_ASSIGNMENT;            return true;
+    case .LOGICAL_OR_ASSIGNMENT;             return true;
+    case .LEFT_SHIFT_ASSIGNMENT;             return true;
+    case .RIGHT_SHIFT_ASSIGNMENT;            return true;
+    case .UNSIGNED_RIGHT_SHIFT_ASSIGNMENT;   return true;
+    case .UNSIGNED_LEFT_SHIFT_ASSIGNMENT;    return true;
+    }
+
+    return false;
+}
+
 begin_arguments :: ( f: *Jai_Formatter )
 {
     f.inside_arguments_count += 1;
@@ -2302,3 +2336,55 @@ get_indent_string :: ( config: Formatter_Config ) -> string
     }
     return builder_to_string( *indent_builder );
 }
+
+Stack :: struct( type: Type )
+{
+    Stack_Node :: struct
+    {
+        value: type;
+        next: *Stack_Node;
+        prev: *Stack_Node;
+    }
+    top: *Stack_Node;
+    count: int;
+    auto_pop := false;
+
+    nodes: [ .. ]Stack_Node;
+}
+
+top :: inline ( stack: *Stack ) -> stack.type
+{
+    return stack.top.value;
+}
+
+top_pointer :: inline ( stack: *Stack ) -> *stack.type
+{
+    return *stack.top.value;
+}
+
+push :: ( stack: *Stack, value: stack.type ) -> *stack.type
+{
+    new_node := array_add( *stack.nodes );
+    new_node.next = null;
+    new_node.prev = stack.top;
+    new_node.value = value;
+    stack.top = new_node;
+
+    stack.count += 1;
+    return *new_node.value;
+}
+
+pop :: ( stack: *Stack ) -> stack.type
+{
+    result: stack.type;
+    if stack.top
+    {
+        top := pop( *stack.nodes );
+        stack.top = top.prev;
+        result = top.value;
+
+        stack.count -= 1;
+    }
+    return result;
+}
+
