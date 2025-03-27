@@ -831,7 +831,7 @@ print_binary_operation :: ( f: *Jai_Formatter, op: *Binary_Operation, no_semicol
     standalone := standalone_expression( op );
     if op.right
     {
-        if is_operator_assignment(op.operation) 
+        if standalone && is_operator_assignment( op.operation )
         {
             f.aligned_inside_assignment = true;
             push_alignment( f );
@@ -853,7 +853,7 @@ print_binary_operation :: ( f: *Jai_Formatter, op: *Binary_Operation, no_semicol
         if f.aligned_inside_assignment
         {
             f.aligned_inside_assignment = false;
-            pop_alignment(f);
+            pop_alignment( f );
         }
     }
 }
@@ -2076,26 +2076,25 @@ get_operator_string :: ( op: $T ) -> string
     return result;
 }
 
-is_operator_assignment :: (op: _Operator) -> bool 
+is_operator_assignment :: ( op: _Operator ) -> bool
 {
-    if op == 
+    if op ==
     {
-    case .ASSIGN;                          return true;
-    case .IS_EQUAL;                          return true;
-    case .PIPE_EQUAL;                        return true;
-    case .PLUS_EQUAL;                        return true;
-    case .MINUS_EQUAL;                       return true;
-    case .MOD_EQUAL;                         return true;
-    case .DIV_EQUAL;                         return true;
-    case .TIMES_EQUAL;                       return true;
-    case .BITWISE_AND_ASSIGNMENT;            return true;
-    case .LOGICAL_AND_ASSIGNMENT;            return true;
-    case .BITWISE_XOR_ASSIGNMENT;            return true;
-    case .LOGICAL_OR_ASSIGNMENT;             return true;
-    case .LEFT_SHIFT_ASSIGNMENT;             return true;
-    case .RIGHT_SHIFT_ASSIGNMENT;            return true;
-    case .UNSIGNED_RIGHT_SHIFT_ASSIGNMENT;   return true;
-    case .UNSIGNED_LEFT_SHIFT_ASSIGNMENT;    return true;
+    case .ASSIGN; return true;
+    case .PIPE_EQUAL; return true;
+    case .PLUS_EQUAL; return true;
+    case .MINUS_EQUAL; return true;
+    case .MOD_EQUAL; return true;
+    case .DIV_EQUAL; return true;
+    case .TIMES_EQUAL; return true;
+    case .BITWISE_AND_ASSIGNMENT; return true;
+    case .LOGICAL_AND_ASSIGNMENT; return true;
+    case .BITWISE_XOR_ASSIGNMENT; return true;
+    case .LOGICAL_OR_ASSIGNMENT; return true;
+    case .LEFT_SHIFT_ASSIGNMENT; return true;
+    case .RIGHT_SHIFT_ASSIGNMENT; return true;
+    case .UNSIGNED_RIGHT_SHIFT_ASSIGNMENT; return true;
+    case .UNSIGNED_LEFT_SHIFT_ASSIGNMENT; return true;
     }
 
     return false;
@@ -2387,4 +2386,3 @@ pop :: ( stack: *Stack ) -> stack.type
     }
     return result;
 }
-
