@@ -5,4 +5,9 @@ test :: ()
         array_add( *shaders, .{ file, ifx name else file, pixel, vertex, compute } );
         shaders: [ .. ]Shader;
     }
+
+#if #exists(TEST)
+{
+    
+}
 }
