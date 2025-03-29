@@ -6,8 +6,25 @@ test :: ()
         shaders: [ .. ]Shader;
     }
 
-#if #exists(TEST)
-{
-    
-}
+    #if #exists( TEST )
+    {
+    }
+
+    test :: struct
+    {
+        a: struct {
+            b: int;
+            c: float;
+        }
+
+        a: union {
+            b: int;
+            c: float;
+        }
+
+        a: enum {
+            A :: 2;
+            B;
+        }
+    }
 }

@@ -56,6 +56,23 @@ test :: () {
         result: Type = get_type();
         return result;
     }
+
+    test :: struct {
+        a: struct {
+            b: int;
+            c: float;
+        }
+
+        a: union {
+            b: int;
+            c: float;
+        }
+
+        a: enum {
+            A :: 2;
+            B;
+        }
+    }
 }
 DONE
 
@@ -120,6 +137,23 @@ test :: () {
     a: #run -> Type {
         result: Type = get_type();
         return result;
+    }
+
+    test :: struct {
+        a: struct {
+            b: int;
+            c: float;
+        }
+
+        a: union {
+            b: int;
+            c: float;
+        }
+
+        a: enum {
+            A :: 2;
+            B;
+        }
     }
 }
 DONE;
