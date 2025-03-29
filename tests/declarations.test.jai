@@ -46,6 +46,16 @@ test :: () {
     a: *Struct.Kind.Kind2;
     a: *#run -> Type {return int;};
     a: *#insert -> string {return "int;";}
+
+    a: #insert -> string {
+        result: string = get_type();
+        return result;
+    }
+
+    a: #run -> Type {
+        result: Type = get_type();
+        return result;
+    }
 }
 DONE
 
@@ -101,6 +111,16 @@ test :: () {
     a: *Struct.Kind.Kind2;
     a: *#run -> Type {return int;}
     a: *#insert -> string {return "int;";}
+
+    a: #insert -> string {
+        result: string = get_type();
+        return result;
+    }
+
+    a: #run -> Type {
+        result: Type = get_type();
+        return result;
+    }
 }
 DONE;
 

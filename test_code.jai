@@ -1,6 +1,8 @@
 test :: ()
 {
-    can_be_used = skill_info.can_interrupt_other_skills &&
-    (current_skill.current_duration <= 
-                current_skill.info.time_to_interrupt);
+    add_shader :: () #expand
+    {
+        array_add( *shaders, .{ file, ifx name else file, pixel, vertex, compute } );
+        shaders: [ .. ]Shader;
+    }
 }

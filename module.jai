@@ -511,17 +511,25 @@ print_declaration :: ( f: *Jai_Formatter, d: *Declaration, compound_type := Comp
     check := d.expression;
     if !d.expression && d.type_inst
     {
-        check = d.type_inst.( *Type_Instantiation ).expression;
+        check = d.type_inst;
+        if node_is(d.type_inst, .UNARY_OPERATION)
+        {
+            check = d.type_inst.(*Unary_Operation).expression;
+        }
+        else if node_is(d.type_inst, .ARRAY_TYPE)
+        {
+            check = d.type_inst.(*Array_Type).element_type;
+        }
     }
 
     // TODO: This is ugly. Figure out something better here
     is_insert_with_block := node_is( check, .DIRECTIVE_INSERT ) && node_is( check.( *Directive_Insert ).expression, .BLOCK );
     is_run_with_block := node_is( check, .DIRECTIVE_RUN ) && node_is( check.( *Directive_Run ).expression, .BLOCK );
     is_code_with_block := node_is( check, .DIRECTIVE_CODE ) && node_is( check.( *Directive_Code ).expression, .BLOCK );
-    ti := d.type_inst.( *Type_Instantiation );
-    not_struct_ti := !ti || ( ti && !node_is( ti.expression, .STRUCT ) &&
-                              !node_is( ti.expression, .ENUM ) &&
-                              !node_is( ti.expression, .UNION ) );
+    ti := d.type_inst;
+    not_struct_ti := !ti || ( ti && !node_is( ti, .STRUCT ) &&
+                              !node_is( ti, .ENUM ) &&
+                              !node_is( ti, .UNION ) );
     not_struct_exp := !node_is( d.expression, .STRUCT ) &&
                       !node_is( d.expression, .ENUM ) &&
                       !node_is( d.expression, .UNION );
