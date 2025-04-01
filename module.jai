@@ -512,13 +512,13 @@ print_declaration :: ( f: *Jai_Formatter, d: *Declaration, compound_type := Comp
     if !d.expression && d.type_inst
     {
         check = d.type_inst;
-        if node_is(d.type_inst, .UNARY_OPERATION)
+        if node_is( d.type_inst, .UNARY_OPERATION )
         {
-            check = d.type_inst.(*Unary_Operation).expression;
+            check = d.type_inst.( *Unary_Operation ).expression;
         }
-        else if node_is(d.type_inst, .ARRAY_TYPE)
+        else if node_is( d.type_inst, .ARRAY_TYPE )
         {
-            check = d.type_inst.(*Array_Type).element_type;
+            check = d.type_inst.( *Array_Type ).element_type;
         }
     }
 
@@ -1269,6 +1269,8 @@ print_struct :: ( f: *Jai_Formatter, s: *Struct )
     }
 
     print_node( f, s.block );
+
+    if is_set( s, .NO_PADDING ) then print( f, " #no_padding" );
 
     for s.notes
     {
