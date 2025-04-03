@@ -2122,6 +2122,8 @@ get_operator_string :: ( op: $T ) -> string
             result = "<<<=";
         case .ARRAY_SUBSCRIPT;
             result = "[]";
+        case .ARRAY_SUBSCRIPT_ADDRESS;
+            result = "*[]";
         case .ARRAY_SUBSCRIPT_ASSIGNMENT;
             result = "[]=";
         }
