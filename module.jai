@@ -303,8 +303,9 @@ print_node :: ( f: *Jai_Formatter, node: *Node, no_semicolon := false )
     case .CASE; print_case( f, xx node );
     case .FOR; print_for( f, xx node );
     case .WHILE; print_while( f, xx node );
-    case .BREAK; print_break( f, xx node );
-    case .CONTINUE; print_continue( f, xx node );
+    case .BREAK; print_break( f, xx node, no_semicolon );
+    case .REMOVE; print_remove( f, xx node, no_semicolon );
+    case .CONTINUE; print_continue( f, xx node, no_semicolon );
     case .DEFER; print_defer( f, xx node );
 
     case .STRUCT; print_struct( f, xx node );
@@ -344,7 +345,7 @@ print_node :: ( f: *Jai_Formatter, node: *Node, no_semicolon := false )
                             type_name[ it_index + 1 ] = to_upper( type_name[ it_index + 1 ] );
                         }
                     }
-                    print( *builder, "case .%; print_directive(f, cast(*%)node);\n", it, type_name );
+                    print( *builder, "case .%; print_directive(f, cast(*%)node, no_semicolon);\n", it, type_name );
                 }
             }
 
@@ -1195,7 +1196,7 @@ print_while :: ( f: *Jai_Formatter, w: *While )
     if !body_is_block then f.indent_level -= 1;
 }
 
-print_break :: ( f: *Jai_Formatter, b: *Break )
+print_break :: ( f: *Jai_Formatter, b: *Break, no_semicolon := false )
 {
     print( f, "break" );
     if b.expression
@@ -1203,10 +1204,21 @@ print_break :: ( f: *Jai_Formatter, b: *Break )
         space( f );
         print_node( f, b.expression );
     }
-    semicolon( f );
+    if !no_semicolon then semicolon( f );
 }
 
-print_continue :: ( f: *Jai_Formatter, c: *Continue )
+print_remove :: ( f: *Jai_Formatter, r: *Remove, no_semicolon := false )
+{
+    print( f, "remove" );
+    if r.expression
+    {
+        space( f );
+        print_node( f, r.expression );
+    }
+    if !no_semicolon then semicolon( f );
+}
+
+print_continue :: ( f: *Jai_Formatter, c: *Continue, no_semicolon := false )
 {
     print( f, "continue" );
     if c.expression
@@ -1214,7 +1226,7 @@ print_continue :: ( f: *Jai_Formatter, c: *Continue )
         space( f );
         print_node( f, c.expression );
     }
-    semicolon( f );
+    if !no_semicolon then semicolon( f );
 }
 
 print_defer :: ( f: *Jai_Formatter, d: *Defer )
@@ -1482,7 +1494,7 @@ print_inline_assembly :: ( f: *Jai_Formatter, a: *Inline_Assembly )
     print( f, a.body );
 }
 
-print_directive :: ( f: *Jai_Formatter, d: *$T )
+print_directive :: ( f: *Jai_Formatter, d: *$T, no_semicolon := false )
 {
     #if T ==
     {
@@ -1637,7 +1649,7 @@ print_directive :: ( f: *Jai_Formatter, d: *$T )
         {
             print( f, " \"%\"", d.message );
         }
-        semicolon( f );
+        if !no_semicolon then semicolon( f );
 
     case Directive_Bake_Arguments;
         print( f, "#bake_arguments " );
@@ -1673,6 +1685,37 @@ print_directive :: ( f: *Jai_Formatter, d: *$T )
             open_paren( f );
             print_node( f, d.scope );
             close_paren( f );
+        }
+
+        if d.for_expansion_break || d.for_expansion_continue || d.for_expansion_remove
+        {
+            open_paren(f);
+            add_comma: bool;
+            if d.for_expansion_break
+            {
+                print(f, "break");
+                print_operator(f, _Operator.ASSIGN);
+                print_node(f, d.for_expansion_break, true);
+                add_comma = true;
+            }
+
+            if d.for_expansion_continue
+            {
+                if add_comma then print(f, ", ");
+                print(f, "continue");
+                print_operator(f, _Operator.ASSIGN);
+                print_node(f, d.for_expansion_continue, true);
+                add_comma = true;
+            }
+
+            if d.for_expansion_remove
+            {
+                if add_comma then print(f, ", ");
+                print(f, "remove");
+                print_operator(f, _Operator.ASSIGN);
+                print_node(f, d.for_expansion_remove, true);
+            }
+            close_paren(f);
         }
 
         if d.type ==
