@@ -1112,7 +1112,7 @@ print_for :: ( f: *Jai_Formatter, _for: *For )
         print_node( f, _for.reversed_condition, true );
         has_pointer := _for.by_pointer_condition || _for.by_pointer;
         if has_pointer then print( f, "," );
-        maybe_print_space( f, has_pointer );
+        space( f );
     }
 
     if _for.by_pointer_condition
@@ -1689,33 +1689,33 @@ print_directive :: ( f: *Jai_Formatter, d: *$T, no_semicolon := false )
 
         if d.for_expansion_break || d.for_expansion_continue || d.for_expansion_remove
         {
-            open_paren(f);
+            open_paren( f );
             add_comma: bool;
             if d.for_expansion_break
             {
-                print(f, "break");
-                print_operator(f, _Operator.ASSIGN);
-                print_node(f, d.for_expansion_break, true);
+                print( f, "break" );
+                print_operator( f, _Operator.ASSIGN );
+                print_node( f, d.for_expansion_break, true );
                 add_comma = true;
             }
 
             if d.for_expansion_continue
             {
-                if add_comma then print(f, ", ");
-                print(f, "continue");
-                print_operator(f, _Operator.ASSIGN);
-                print_node(f, d.for_expansion_continue, true);
+                if add_comma then print( f, ", " );
+                print( f, "continue" );
+                print_operator( f, _Operator.ASSIGN );
+                print_node( f, d.for_expansion_continue, true );
                 add_comma = true;
             }
 
             if d.for_expansion_remove
             {
-                if add_comma then print(f, ", ");
-                print(f, "remove");
-                print_operator(f, _Operator.ASSIGN);
-                print_node(f, d.for_expansion_remove, true);
+                if add_comma then print( f, ", " );
+                print( f, "remove" );
+                print_operator( f, _Operator.ASSIGN );
+                print_node( f, d.for_expansion_remove, true );
             }
-            close_paren(f);
+            close_paren( f );
         }
 
         if d.type ==
