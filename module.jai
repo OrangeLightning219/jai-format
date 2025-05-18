@@ -1105,6 +1105,12 @@ print_for :: ( f: *Jai_Formatter, _for: *For )
         space( f );
     }
 
+    if _for.expansion
+    {
+        print( f, ":%", _for.expansion.(*Identifier).name );
+        space( f );
+    }
+
     if _for.reversed_condition
     {
         print( f, "<=" );

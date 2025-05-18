@@ -1,8 +1,13 @@
 test :: ()
 {
-    #insert( break = #assert ( false ), continue = continue value, remove = remove value ) body;
+    for :test *list
+    {
+
+    }
 }
 
-operator *[] :: ( a: *[]int )
-{
-}
+// init :: (using arena : *Component_Arena($T), cap : s64, add_proc : Component_Arena(T).ADD_CBK = null, rem_proc : Component_Arena(T).REM_CBK = null, cpy_proc : Component_Arena(T).CPY_CBK = null) {
+// }
+
+
+
