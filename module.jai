@@ -994,6 +994,11 @@ print_if :: ( f: *Jai_Formatter, i: *If )
     }
     space( f );
 
+    if i.marked_as_complete
+    {
+        print( f, "#complete " );
+    }
+
     push_alignment( f );
 
     if i.condition
@@ -1107,7 +1112,7 @@ print_for :: ( f: *Jai_Formatter, _for: *For )
 
     if _for.expansion
     {
-        print( f, ":%", _for.expansion.(*Identifier).name );
+        print( f, ":%", _for.expansion.( *Identifier ).name );
         space( f );
     }
 
@@ -1772,6 +1777,7 @@ print_directive :: ( f: *Jai_Formatter, d: *$T, no_semicolon := false )
     case Directive_Placeholder;
         print( f, "#placeholder " );
         print_node( f, d.expression );
+        semicolon( f );
 
     case Directive_Procedure_Of_Call;
         print( f, "#procedure_of_call " );
