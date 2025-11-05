@@ -4,9 +4,49 @@
 #import "String";
 #import "Command_Line";
 #import "Hash_Table";
-#import "Print_Color"()( USE_ANSI_CODES_ON_WINDOWS = true );
+ansi :: #import "Print_Color"()( USE_ANSI_CODES_ON_WINDOWS = true );
 
 #import,file "module.jai";
+
+// use `with_console_color` only when stdout is tty
+#if OS == .WINDOWS
+{
+    #import "Windows";
+    isatty_stdout :: () -> bool
+    {
+        fd := GetStdHandle( STD_OUTPUT_HANDLE );
+        mode: DWORD;
+        result := GetConsoleMode( fd, *mode );
+        return result != 0;
+    }
+}
+else #if OS == .LINUX || OS == .MACOS
+{
+    #import "POSIX";
+    isatty_stdout :: () -> bool
+    {
+        return isatty( 1 ) != 0;
+    }
+}
+else
+{
+    isatty_stdout :: () -> bool
+    {
+        return false;
+    }
+}
+
+with_console_color :: ( color: ansi.Console_Color, code: Code, style: ansi.Console_Style = .NORMAL, to_standard_error := false ) #expand
+{
+    if isatty_stdout()
+    {
+        ansi.with_console_color( color, code, style, to_standard_error );
+    }
+    else
+    {
+        #insert code;
+    }
+}
 
 CLI_Arguments :: struct
 {
@@ -173,7 +213,7 @@ custom_logger :: ( message: string, data: *void, info: Log_Info )
 
     if prefix
     {
-        color: Console_Color = ifx info.common_flags == .ERROR then .HI_RED else .HI_YELLOW;
+        color: ansi.Console_Color = ifx info.common_flags == .ERROR then .HI_RED else .HI_YELLOW;
         with_console_color( color, write_string( prefix ), .BOLD );
         write_string( " " );
     }
