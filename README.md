@@ -180,6 +180,56 @@ There are some automated tests that check the correctness of the formatted outpu
 will be formatted as:\
 `test :: /*asd*/(param: /*asd*/int) -> /*zxc*//*asd*/int`
 
+## Neovim setup
+### If using conform.nvim
+Add this to your conform setup:
+```lua
+local conform_util = require("conform.util")
+require("conform").setup({ 
+    formatters_by_ft = { 
+        jai   = { "jai-format" }, 
+    },
+    formatters = {
+        ["jai-format"] = {
+            command = "jai-format",
+            args = { "-silent", "-to_file", "$FILENAME" },
+            cwd = conform_util.root_file({ ".jai-format" }),
+            stdin = false,
+        },
+    }
+})
+```
+### Without a formatter plugin
+You can run the `jai-format` command manually:
+```lua
+local function jai_format()
+    local job = require("plenary.job")
+    local current_file = vim.fn.expand("%:p")
+    job:new({
+        command = "jai-format",
+        args = { "-to_file", current_file },
+        cwd = vim.fn.getcwd(),
+        on_exit = function(j, return_val)
+            local callback = vim.schedule_wrap(function(file) 
+                vim.api.nvim_command("checktime " .. file)
+            end)
+            callback(current_file)
+        end,
+    }):start()
+end
+
+vim.api.nvim_create_user_command("JaiFormat", jai_format, {nargs = 0, desc = ""})
+```
+After adding this to you config you can run `:JaiFormat` to format the current buffer or you can setup an autocommand to format on save:
+```lua
+local autocommand_group = vim.api.nvim_create_augroup('auto_commands', {})
+vim.api.nvim_create_autocmd({"BufWritePost"}, {
+    command = "JaiFormat",
+    group = autocommand_group,
+    pattern = {"*.jai"}
+})
+```
+
 ## What's left to do (in order of importance)
 - Write more tests
 - Don't format if there are syntax errors. This relies on the jai_parser module checking for syntax errors which it currently doesn't.
@@ -187,4 +237,3 @@ will be formatted as:\
 - Add `//jai-format:config_option=true` comments that allow overriding configuration options in specific places.
 - Add more configuration options:
     - Forcing braces for single line if statements, for loops, while loops etc.
-- Neovim plugin

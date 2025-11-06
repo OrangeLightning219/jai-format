@@ -4,7 +4,7 @@
 #import "String";
 #import "Command_Line";
 #import "Hash_Table";
-#import "Print_Color"()( USE_ANSI_CODES_ON_WINDOWS = true );
+Ansi :: #import "Print_Color"()( USE_ANSI_CODES_ON_WINDOWS = true );
 
 #import,file "module.jai";
 
@@ -173,7 +173,7 @@ custom_logger :: ( message: string, data: *void, info: Log_Info )
 
     if prefix
     {
-        color: Console_Color = ifx info.common_flags == .ERROR then .HI_RED else .HI_YELLOW;
+        color: Ansi.Console_Color = ifx info.common_flags == .ERROR then .HI_RED else .HI_YELLOW;
         with_console_color( color, write_string( prefix ), .BOLD );
         write_string( " " );
     }
@@ -186,5 +186,39 @@ custom_logger :: ( message: string, data: *void, info: Log_Info )
     {
         ends_with_new_line := s[ s.count - 1 ] == #char "\n";
         if !ends_with_new_line then write_string( "\n" );
+    }
+}
+
+// use `with_console_color` only when stdout is tty
+is_tty :: () -> bool
+{
+    #if OS == .WINDOWS
+    {
+        #import "Windows";
+        fd := GetStdHandle( STD_OUTPUT_HANDLE );
+        mode: DWORD;
+        result := GetConsoleMode( fd, *mode );
+        return result != 0;
+    }
+    else if OS == .LINUX || OS == .MACOS
+    {
+        #import "POSIX";
+        return isatty( 1 ) != 0;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+with_console_color :: ( color: Ansi.Console_Color, code: Code, style: Ansi.Console_Style = .NORMAL, to_standard_error := false ) #expand
+{
+    if is_tty()
+    {
+        Ansi.with_console_color( color, code, style, to_standard_error );
+    }
+    else
+    {
+        #insert code;
     }
 }
