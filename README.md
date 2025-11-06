@@ -220,7 +220,7 @@ end
 
 vim.api.nvim_create_user_command("JaiFormat", jai_format, {nargs = 0, desc = ""})
 ```
-After adding this to you config you can run `:JaiFormat` to format the current buffer or you can setup an autocommand to format on save:
+After adding this to your config you can run `:JaiFormat` to format the current buffer or you can setup an autocommand to format on save:
 ```lua
 local autocommand_group = vim.api.nvim_create_augroup('auto_commands', {})
 vim.api.nvim_create_autocmd({"BufWritePost"}, {
