@@ -66,6 +66,15 @@ You can also use the formatter as a module by directly using the `format_file`, 
         a := 1 + 2;                     a:=1+2;
 ```
 
+- wrap_before_operators: default = false\
+    If true a new line will be inserted before the operator in a multiline expression.
+```
+    true:                           false:
+        if a                            if a ||
+           || b                            b ||
+           || c                            c
+```
+
 - alignment_mode: default = EXACT\
     Specifies how to align expressions after line breaks.\
     Things that will be aligned are:

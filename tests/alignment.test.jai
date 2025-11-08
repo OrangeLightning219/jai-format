@@ -217,3 +217,41 @@ DONE;
 
     return result;
 } @Test
+
+ALIGN2 :: #string DONE
+test :: () {
+    a := 1 + 2 + 
+        (3 + 4 + 
+        5 + 6) * 0.5 + 
+        5;
+
+    if a + 
+        b * (a - b / 
+        c) > 0 {
+
+    }
+}
+DONE
+
+wrap_before_operator :: () -> Test_Parameters
+{
+    using result: Test_Parameters;
+    config.alignment_mode = .EXACT;
+    config.wrap_before_operators = true;
+    source_code = ALIGN2;
+    expected_output = #string DONE
+test :: () {
+    a := 1 + 2
+         + (3 + 4
+            + 5 + 6) * 0.5
+         + 5;
+
+    if a
+       + b * (a - b
+              / c) > 0 {
+    }
+}
+DONE;
+
+    return result;
+} @Test

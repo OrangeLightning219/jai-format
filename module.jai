@@ -15,6 +15,7 @@ Formatter_Config :: struct
     spaces_inside_brackets := false;
     spaces_inside_literals := false;
     spaces_around_operators := true;
+    wrap_before_operators := false;
 
     alignment_mode := Alignment_Mode.EXACT;
     declaration_alignment_mode := Alignment_Mode.NOT_SET;
@@ -853,7 +854,15 @@ print_binary_operation :: ( f: *Jai_Formatter, op: *Binary_Operation, no_semicol
         print_node( f, op.left );
     }
 
+    add_line: bool;
+    if op.right
+    {
+        right_line := op.right.location.l0;
+        add_line = right_line > f.current_line && f.wrap_before_operators;
+        maybe_print_new_line( f, add_line, true );
+    }
     print_operator( f, op.operation );
+    if add_line then f.current_line += 1;
 
     standalone := standalone_expression( op );
     if op.right
@@ -1973,7 +1982,7 @@ print_operator :: ( f: *Jai_Formatter, op: $T )
     {
         print_space = false;
     }
-    maybe_print_space( f, print_space );
+    maybe_print_space( f, print_space && f.previous_print_type != .NEW_LINE && f.previous_print_type != .INDENT);
     // NOTE: "%" is used here for the same reason as in here strings. % operator was treated as a format string.
     print( f, "%", get_operator_string( op ) );
     maybe_print_space( f, print_space );
