@@ -23,9 +23,17 @@ Formatter_Config :: struct
     surround_multiple_returns_with_parens := false;
     insert_space_in_single_line_comments := true;
     max_empty_lines_to_keep := 1;
+    indent_mode := Indent_Mode.SPACES;
     indent_width := 4;
+    tab_width := 4;
     no_carriage_return_on_windows := false;
     // TODO: Add option to force braces for single line ifs, fors and whiles
+}
+
+Indent_Mode :: enum
+{
+    SPACES;
+    TABS;
 }
 
 Alignment_Mode :: enum
@@ -45,7 +53,7 @@ Jai_Formatter :: struct( Parser_Visit_Type: Type = Node_Visit_Data )
     current_collumn: int;
     current_alignment: int;
     alignments: [ .. ]int;
-    previous_print_type: enum { STRING; NEW_LINE; INDENT; SPACE; }
+    previous_print_type: enum { STRING; NEW_LINE; TAB; INDENT; SPACE; }
     new_scope_started: bool;
 
     inside_arguments: bool;
@@ -2185,6 +2193,12 @@ space :: ( f: *Jai_Formatter )
     f.previous_print_type = .SPACE;
 }
 
+tab :: ( f: *Jai_Formatter )
+{
+    print( f, "\t" );
+    f.previous_print_type = .TAB;
+}
+
 semicolon :: ( f: *Jai_Formatter )
 {
     // NOTE: We don't want to add semicolons if we're currently printing #code that is not a block and that is passed to a function as an argument. For example test(a, #code return null);
@@ -2341,10 +2355,30 @@ indent :: ( f: *Jai_Formatter )
         print( f, f.indent_string );
     }
 
-    for 0..f.current_alignment - 1
+    if f.indent_mode == .TABS
     {
-        space( f );
+        tabs_count := f.current_alignment / f.tab_width;
+        space_count := f.current_alignment % f.tab_width;
+        assert( tabs_count * f.tab_width + space_count == f.current_alignment );
+
+        for 0..tabs_count - 1
+        {
+            tab( f );
+        }
+
+        for 0..space_count - 1
+        {
+            space( f );
+        }
     }
+    else
+    {
+        for 0..f.current_alignment - 1
+        {
+            space( f );
+        }
+    }
+
     f.previous_print_type = .INDENT;
 }
 
@@ -2396,9 +2430,10 @@ node_is :: ( node: *Node, kind: Node.Kind ) -> bool
 get_indent_string :: ( config: Formatter_Config ) -> string
 {
     indent_builder: String_Builder;
+    indent_char := ifx config.indent_mode == .SPACES then " " else "\t";
     for 0..config.indent_width - 1
     {
-        print( *indent_builder, " " );
+        print( *indent_builder, indent_char );
     }
     return builder_to_string( *indent_builder );
 }

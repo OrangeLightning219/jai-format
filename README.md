@@ -160,8 +160,21 @@ You can also use the formatter as a module by directly using the `format_file`, 
     }
 ```
 
+- indent_mode : default = SPACES\
+    What character to use for indentation. Either `SPACES` or `TABS`.
+
 - indent_width: default = 4\
-    Amount of spaces to use as indentation.
+    Amount of spaces or tabs to use as indentation.
+
+- tab_width: default = 4\
+    Set this to the tab width you use in your editor. This option is only used for `EXACT` alignment mode to allow precise alignment by mixing tabs and spaces.\
+    For example:
+```
+____if ( a > 1 && a < 5 ) ||
+____...( a > 8 && a < 10 )
+^    ^
+tab  spaces
+```
 
 - no_carriage_return_on_windows: default = false\
     If true only `\n` will be used as a line ending instead of `\r\n` on windows.
