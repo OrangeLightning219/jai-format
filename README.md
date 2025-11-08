@@ -69,7 +69,7 @@ You can also use the formatter as a module by directly using the `format_file`, 
 - alignment_mode: default = EXACT\
     Specifies how to align expressions after line breaks.\
     Things that will be aligned are:
-    - Declarations (`:=`, `::`)
+    - Declarations and assignments (`:=`, `::`, `=`)
     - Everything surrounded with `()`, `[]` or `{}`
     - Expressions after `if`, `while` and `for`
     
@@ -79,6 +79,16 @@ You can also use the formatter as a module by directly using the `format_file`, 
     - `EXACT` - exactly align expressions with their start point
 
     For more alignment examples see `tests/alignment.test.jai`.
+
+- alignment mode overrides:\
+    You can override the alignment_mode for specific things:
+    - declaration_alignment_mode - alignment for declarations and assignments (`:=`, `::`, `=`)
+    - expression_alignment_mode - alignment for expressions after `if`, `while` and `for` etc.
+    - parens_alignment_mode - alignment for things surrounded with `()`
+    - brackets_alignment_mode - alignment for things surrounded with `[]` 
+    - struct_literal_alignment_mode - alignment for struct literals (`.{}`)
+
+    If any of these options are not set then the value of `alignment_mode` will be used.
 
 ```
     DISABLED:                           INDENT_ONLY:                           EXACT:

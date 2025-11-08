@@ -15,7 +15,14 @@ Formatter_Config :: struct
     spaces_inside_brackets := false;
     spaces_inside_literals := false;
     spaces_around_operators := true;
+
     alignment_mode := Alignment_Mode.EXACT;
+    declaration_alignment_mode := Alignment_Mode.NOT_SET;
+    expression_alignment_mode := Alignment_Mode.NOT_SET;
+    parens_alignment_mode := Alignment_Mode.NOT_SET;
+    brackets_alignment_mode := Alignment_Mode.NOT_SET;
+    struct_literal_alignment_mode := Alignment_Mode.NOT_SET;
+
     braces_on_new_line := false;
     quick_lambda_brace_on_new_line := false;
     else_on_new_line := false;
@@ -23,9 +30,11 @@ Formatter_Config :: struct
     surround_multiple_returns_with_parens := false;
     insert_space_in_single_line_comments := true;
     max_empty_lines_to_keep := 1;
+
     indent_mode := Indent_Mode.SPACES;
     indent_width := 4;
     tab_width := 4;
+
     no_carriage_return_on_windows := false;
     // TODO: Add option to force braces for single line ifs, fors and whiles
 }
@@ -38,6 +47,7 @@ Indent_Mode :: enum
 
 Alignment_Mode :: enum
 {
+    NOT_SET;
     DISABLED;
     INDENT_ONLY;
     EXACT;
@@ -494,7 +504,7 @@ print_declaration :: ( f: *Jai_Formatter, d: *Declaration, compound_type := Comp
         maybe_print_space( f, f.spaces_around_operators );
 
         standalone := standalone_expression( d );
-        if standalone then push_alignment( f );
+        if standalone then push_alignment( f, f.declaration_alignment_mode );
         print_node( f, d.expression );
         if standalone then pop_alignment( f );
     }
@@ -593,7 +603,7 @@ print_compound_declaration_item :: ( f: *Jai_Formatter, i: *Compound_Declaration
 print_comma_separated_expression :: ( f: *Jai_Formatter, e: *Comma_Separated_Expression )
 {
     if e.surrounded_with_parens then open_paren( f );
-    else push_alignment( f );
+    else push_alignment( f, f.expression_alignment_mode );
     comma_separated_node_list( f, e.members );
     if e.surrounded_with_parens then close_paren( f );
     else pop_alignment( f );
@@ -626,7 +636,7 @@ print_procedure :: ( f: *Jai_Formatter, p: *Procedure )
 
         with_parens := f.surround_multiple_returns_with_parens || p.returns_surrounded_with_parens;
         if with_parens then open_paren( f );
-        if !with_parens then push_alignment( f );
+        if !with_parens then push_alignment( f, f.expression_alignment_mode );
 
         begin_arguments( f );
         for p.returns
@@ -815,7 +825,7 @@ print_return :: ( f: *Jai_Formatter, r: *Return )
     if r.backticked then print( f, "`" );
     print( f, "return" );
     maybe_print_space( f, r.returns.count > 0 );
-    push_alignment( f );
+    push_alignment( f, f.expression_alignment_mode );
     comma_separated_node_list( f, r.returns );
     if !parent_is( r, .DIRECTIVE_CODE )
     {
@@ -851,7 +861,7 @@ print_binary_operation :: ( f: *Jai_Formatter, op: *Binary_Operation, no_semicol
         if standalone && is_operator_assignment( op.operation )
         {
             f.aligned_inside_assignment = true;
-            push_alignment( f );
+            push_alignment( f, f.declaration_alignment_mode );
         }
         print_node( f, op.right );
     }
@@ -917,7 +927,7 @@ print_array_subscript :: ( f: *Jai_Formatter, a: *Array_Subscript )
     print_node( f, a.expression );
     print( f, "[" );
     maybe_print_space( f, f.spaces_inside_brackets );
-    push_alignment( f );
+    push_alignment( f, f.brackets_alignment_mode );
     print_node( f, a.subscript );
     pop_alignment( f );
     maybe_print_space( f, f.spaces_inside_brackets );
@@ -949,7 +959,7 @@ print_literal :: ( f: *Jai_Formatter, l: *Literal )
         print( f, ".[" );
         maybe_print_space( f, f.spaces_inside_literals && !is_empty );
 
-        push_alignment( f );
+        push_alignment( f, f.brackets_alignment_mode );
         for array_info.elements
         {
             print_node( f, it );
@@ -971,7 +981,7 @@ print_literal :: ( f: *Jai_Formatter, l: *Literal )
         print( f, ".{" );
         maybe_print_space( f, f.spaces_inside_literals && !is_empty );
 
-        push_alignment( f );
+        push_alignment( f, f.struct_literal_alignment_mode );
         for struct_info.body
         {
             print_node( f, it );
@@ -1007,7 +1017,7 @@ print_if :: ( f: *Jai_Formatter, i: *If )
         print( f, "#complete " );
     }
 
-    push_alignment( f );
+    push_alignment( f, f.expression_alignment_mode );
 
     if i.condition
     {
@@ -1111,7 +1121,7 @@ print_for :: ( f: *Jai_Formatter, _for: *For )
 {
     print( f, "for" );
     space( f );
-    push_alignment( f );
+    push_alignment( f, f.expression_alignment_mode );
     if _for.is_v2
     {
         print( f, "#v2" );
@@ -1202,7 +1212,7 @@ print_while :: ( f: *Jai_Formatter, w: *While )
 {
     print( f, "while" );
     space( f );
-    push_alignment( f );
+    push_alignment( f, f.expression_alignment_mode );
     print_node( f, w.expression, true );
     maybe_print_space( f, !node_is( w.body, .BLOCK ) );
     pop_alignment( f );
@@ -2254,7 +2264,7 @@ open_paren :: ( f: *Jai_Formatter, extra_condition := true )
 {
     print( f, "(" );
     maybe_print_space( f, f.spaces_inside_parens && extra_condition );
-    push_alignment( f );
+    push_alignment( f, f.parens_alignment_mode );
 }
 
 close_paren :: ( f: *Jai_Formatter, extra_condition := true )
@@ -2309,10 +2319,13 @@ print :: ( f: *Jai_Formatter, format: string, args: ..Any )
     f.previous_print_type = .STRING;
 }
 
-push_alignment :: ( f: *Jai_Formatter )
+push_alignment :: ( f: *Jai_Formatter, mode: Alignment_Mode = .NOT_SET )
 {
+    m := mode;
+    if m == .NOT_SET then m = f.alignment_mode;
+
     amount: int;
-    if f.alignment_mode ==
+    if m ==
     {
     case .DISABLED;
         return;
