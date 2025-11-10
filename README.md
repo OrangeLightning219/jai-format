@@ -88,6 +88,12 @@ You can also use the formatter as a module by directly using the `format_file`, 
     - `EXACT` - exactly align expressions with their start point
 
     For more alignment examples see `tests/alignment.test.jai`.
+```
+    DISABLED:                           INDENT_ONLY:                           EXACT:
+        test(a, b, c,                       test(a, b, c,                          test(a, b, c, 
+        d(a, b,                                 d(a, b,                                 d(a, b,
+        c), e);                                     c), e);                               c), e);
+```
 
 - alignment mode overrides:\
     You can override the alignment_mode for specific things:
@@ -99,11 +105,21 @@ You can also use the formatter as a module by directly using the `format_file`, 
 
     If any of these options are not set then the value of `alignment_mode` will be used.
 
+- single_statement_brace_mode: default = DONT_MODIFY\
+    Specifies wheter to keep, add or remove braces to single statements in control flow expressions (`if`, `for`, `while`).
+    
+    Alowed values are:
+    - `DONT_MODIFY` - don't modify the braces
+    - `FORCE_ADD` - always add braces to single line statements
+    - `FORCE_REMOVE` - always remove braces from single line statements
+    
 ```
-    DISABLED:                           INDENT_ONLY:                           EXACT:
-        test(a, b, c,                       test(a, b, c,                          test(a, b, c, 
-        d(a, b,                                 d(a, b,                                 d(a, b,
-        c), e);                                     c), e);                               c), e);
+    DONT_MODIFY:                           FORCE_ADD:                           FORCE_REMOVE:
+        if condition {                         if condition {                       if condition
+            print("true");                         print("true");                       print("true");
+        } else                                 } else {                             else
+            print("false");                        print("false");                      print("false");
+                                               }
 ```
 
 - braces_on_new_line: default = false\
@@ -267,5 +283,3 @@ vim.api.nvim_create_autocmd({"BufWritePost"}, {
 - Don't format if there are syntax errors. This relies on the jai_parser module checking for syntax errors which it currently doesn't.
 - Add `//jai-format:off` and `//jai-format:on` comments that allow disabling the formatter in specific places.
 - Add `//jai-format:config_option=true` comments that allow overriding configuration options in specific places.
-- Add more configuration options:
-    - Forcing braces for single line if statements, for loops, while loops etc.

@@ -1,15 +1,63 @@
-test :: ( a: int, b: float ) -> bool
-{
-    if ( c > 0.1 && c < 0.5 ) 
-    ||       ( c > 0.6 && c < 1.0 ) && 
-    ( a == b ||
-                                   c == d )
-    {
-        return false;
+b := ifx a 
+else 6;
+
+if a > b {
+    print("true");
+} 
+else {
+    print("false");
+}
+
+if a then b += a; else c *= a;
+if a b += a; else c *= a;
+if a 
+
+    b; 
+else 
+    c;
+
+
+if a     b; 
+else c;
+
+#run {
+    a: int = 3;
+    if a == {
+        case 1;
+            b := 3;
+        case 2;
+            b := 4;
+        case 3;
+            b := 5;
+        case;
+    }
+    print("%", a);
+}
+
+for things print(it);
+for things 
+    print(it);
+
+for things {print(it);}
+for things 
+{print(it);}
+
+while true print("true");
+while true 
+    print("true");
+
+while true {print("true");}
+while true {
+    print("true");
+    print("true");
+    print("true");
+    print("true");
     }
 
-a := x
-  || y
-  || reallyLongPart
-  || thing;
+if a > b{
+    print("true");
+}
+else {
+    print("false");
+    print("false");
 }

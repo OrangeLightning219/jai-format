@@ -278,3 +278,168 @@ DONE;
 
     return result;
 } @Test
+
+BRACES :: #string DONE
+test :: () {
+    if a > b {
+        print("true");
+    } 
+    else {
+        print("false");
+    }
+
+    if a then b += a; else c *= a;
+    if a b += a; else c *= a;
+    if a 
+
+        b; 
+    else 
+        c;
+
+    if a     b; 
+    else c;
+
+    if a {
+        b; 
+    }
+    else c;
+
+    for things print(it);
+    for things 
+        print(it);
+
+    for things {print(it);}
+    for things {
+        print(it);
+    }
+
+    while true print("true");
+    while true 
+        print("true");
+
+    while true {print("true");}
+    while true 
+    {print("true");}
+}
+DONE
+
+force_add_braces :: () -> Test_Parameters
+{
+    using result: Test_Parameters;
+    config.single_statement_brace_mode = .FORCE_ADD;
+    source_code = BRACES;
+    expected_output = #string DONE
+test :: () {
+    if a > b {
+        print("true");
+    } else {
+        print("false");
+    }
+
+    if a then b += a; else c *= a;
+    if a {b += a;} else {c *= a;}
+    if a {
+        b;
+    } else {
+        c;
+    }
+
+    if a {b;}
+    else {c;}
+
+    if a {
+        b;
+    } else {
+        c;
+    }
+
+    for things {print(it);}
+    for things {
+        print(it);
+    }
+
+    for things {print(it);}
+    for things {
+        print(it);
+    }
+
+    while true {print("true");}
+    while true {
+        print("true");
+    }
+
+    while true {print("true");}
+    while true {print("true");}
+}
+DONE;
+
+    return result;
+} @Test
+
+BRACES1 :: #string DONE
+test :: () {
+    if a > b {
+        print("true");
+    } 
+    else {
+        print("false");
+        print("false");
+    }
+
+    if a then b += a; else c *= a;
+    if a {b += a;} else {c *= a;}
+    if a {
+
+        b; 
+    }
+    else { c; }
+
+    if a    {b;} 
+    else {c;}
+
+    for things {print(it);}
+    for things {
+        print(it);
+    }
+
+    while true {print("true");}
+    while true 
+    {print("true");}
+}
+DONE
+
+force_remove_braces :: () -> Test_Parameters
+{
+    using result: Test_Parameters;
+    config.single_statement_brace_mode = .FORCE_REMOVE;
+    source_code = BRACES1;
+    expected_output = #string DONE
+test :: () {
+    if a > b
+        print("true");
+    else {
+        print("false");
+        print("false");
+    }
+
+    if a then b += a; else c *= a;
+    if a b += a; else c *= a;
+    if a
+        b;
+    else c;
+
+    if a b;
+    else c;
+
+    for things print(it);
+    for things
+        print(it);
+
+    while true print("true");
+    while true
+        print("true");
+}
+DONE;
+
+    return result;
+} @Test

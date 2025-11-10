@@ -24,6 +24,7 @@ Formatter_Config :: struct
     brackets_alignment_mode := Alignment_Mode.NOT_SET;
     struct_literal_alignment_mode := Alignment_Mode.NOT_SET;
 
+    single_statement_brace_mode := Single_Statement_Brace_Mode.DONT_MODIFY;
     braces_on_new_line := false;
     quick_lambda_brace_on_new_line := false;
     else_on_new_line := false;
@@ -37,13 +38,19 @@ Formatter_Config :: struct
     tab_width := 4;
 
     no_carriage_return_on_windows := false;
-    // TODO: Add option to force braces for single line ifs, fors and whiles
 }
 
 Indent_Mode :: enum
 {
     SPACES;
     TABS;
+}
+
+Single_Statement_Brace_Mode :: enum
+{
+    DONT_MODIFY;
+    FORCE_ADD;
+    FORCE_REMOVE;
 }
 
 Alignment_Mode :: enum
@@ -1011,6 +1018,7 @@ print_if :: ( f: *Jai_Formatter, i: *If )
     {
         print( f, "#" );
     }
+
     if i.if_kind ==
     {
     case .IF; #through;
@@ -1045,13 +1053,56 @@ print_if :: ( f: *Jai_Formatter, i: *If )
         print( f, " then" );
     }
 
+    force_braces: bool;
+    remove_braces: bool;
+    if f.single_statement_brace_mode ==
+    {
+    case .FORCE_ADD;
+        force_braces = !i.then_keyword_used && i.if_kind != .IFX;
+    case .FORCE_REMOVE;
+        remove_braces = i.if_kind == .IF;
+    }
+
+    if force_braces then assert( remove_braces == false );
+    if remove_braces then assert( force_braces == false );
+
     then_is_block := node_is( i._then, .BLOCK );
+    single_line_then: bool;
+
     if i._then
     {
+        to_print := i._then;
+
+        // single_line_then = !then_is_block && i.location.l0 == i._then.location.l0;
+        block: Block;
+        if force_braces && !then_is_block
+        {
+            block = make_block_from_node( i._then );
+            to_print = *block;
+
+            single_line_then = i.location.l0 == i._then.location.l0;
+            if !single_line_then
+            {
+                block.location.l0 = i.location.l0;
+                block.location.c0 = i.condition.location.c1 + 1;
+            }
+        }
+        else if remove_braces && then_is_block
+        {
+            b := i._then.( *Block );
+            if b.members.count == 1
+            {
+                to_print = b.members[ 0 ];
+            }
+        }
+
+        then_is_block = node_is( to_print, .BLOCK );
+        // single_line_then = to_print.location.l0 == to_print.location.l1;
+
         f.new_scope_started = true;
         if !then_is_block then f.indent_level += 1;
         maybe_print_space( f, !then_is_block );
-        print_node( f, i._then, !then_is_block && i.if_kind == .IFX );
+        print_node( f, to_print, !then_is_block && i.if_kind == .IFX );
         if !then_is_block then f.indent_level -= 1;
     }
 
@@ -1061,9 +1112,48 @@ print_if :: ( f: *Jai_Formatter, i: *If )
         single_line := i.location.l0 == i.location.l1;
         print_space := ( then_is_block && !f.else_on_new_line ) || i.if_kind == .IFX || single_line;
         maybe_print_space( f, print_space );
+
         else_already_on_new_line := i._else.location.l0 > i.location.l0;
         else_is_block := node_is( i._else, .BLOCK );
-        on_new_line := ( then_is_block && f.else_on_new_line ) || ( else_already_on_new_line && !else_is_block );
+        to_print := i._else;
+
+        block: Block;
+        new_line_after_else: bool;
+        if force_braces && !else_is_block
+        {
+            block = make_block_from_node( i._else );
+            to_print = *block;
+
+            if !single_line_then
+            {
+                block.location.l1 += 1;
+                new_line_after_else = true;
+            }
+        }
+        else if remove_braces && else_is_block
+        {
+            b := i._else.( *Block );
+            if b.members.count == 1
+            {
+                to_print = b.members[ 0 ];
+            }
+        }
+
+        else_is_block = node_is( to_print, .BLOCK );
+
+        on_new_line: bool;
+        if i.if_kind == .IFX
+        {
+            on_new_line = ( then_is_block && f.else_on_new_line ) || ( else_already_on_new_line && !else_is_block );
+        }
+        else
+        {
+            after_then_block := then_is_block && !single_line_then && f.else_on_new_line;
+            on_new_line = after_then_block ||
+                          ( else_already_on_new_line &&
+                            ( !then_is_block || ( then_is_block && single_line_then ) ) );
+        }
+
         maybe_print_new_line( f, on_new_line );
         if on_new_line
         {
@@ -1076,8 +1166,10 @@ print_if :: ( f: *Jai_Formatter, i: *If )
             f.previous_line = f.current_line;
             f.current_line = i._else.location.l0;
         }
+
         maybe_print_space( f, !else_is_block );
-        print_node( f, i._else, !else_is_block && i.if_kind == .IFX );
+        print_node( f, to_print, !else_is_block && i.if_kind == .IFX );
+        maybe_print_new_line( f, new_line_after_else );
     }
 }
 
@@ -1189,10 +1281,16 @@ print_for :: ( f: *Jai_Formatter, _for: *For )
         space( f );
     }
 
+    force_braces := f.single_statement_brace_mode == .FORCE_ADD;
+    remove_braces := f.single_statement_brace_mode == .FORCE_REMOVE;
+
+    body_is_block := node_is( _for.body, .BLOCK );
+
     if _for.iterator
     {
         print_node( f, _for.iterator, true );
-        maybe_print_space( f, !node_is( _for.body, .BLOCK ) );
+        add_space := ( !force_braces && !body_is_block ) || ( remove_braces && body_is_block );
+        maybe_print_space( f, add_space );
     }
 
     if _for.no_abc
@@ -1209,10 +1307,34 @@ print_for :: ( f: *Jai_Formatter, _for: *For )
 
     if _for.body
     {
-        body_is_block := node_is( _for.body, .BLOCK );
+        to_print := _for.body;
+        block: Block;
+        if force_braces && !body_is_block
+        {
+            body := _for.body;
+            block = make_block_from_node( body );
+            to_print = *block;
+
+            if body.location.l0 > _for.location.l0
+            {
+                block.location.l0 = _for.location.l0;
+                block.location.c0 = _for.iterator.location.c1 + 1;
+            }
+        }
+        else if remove_braces && body_is_block
+        {
+            b := _for.body.( *Block );
+            if b.members.count == 1
+            {
+                to_print = b.members[ 0 ];
+            }
+        }
+
+        body_is_block = node_is( to_print, .BLOCK );
+
         if !body_is_block then f.indent_level += 1;
         f.new_scope_started = true;
-        print_node( f, _for.body );
+        print_node( f, to_print );
         if !body_is_block then f.indent_level -= 1;
     }
 }
@@ -1223,14 +1345,45 @@ print_while :: ( f: *Jai_Formatter, w: *While )
     space( f );
     push_alignment( f, f.expression_alignment_mode );
     print_node( f, w.expression, true );
-    maybe_print_space( f, !node_is( w.body, .BLOCK ) );
+
+    force_braces := f.single_statement_brace_mode == .FORCE_ADD;
+    remove_braces := f.single_statement_brace_mode == .FORCE_REMOVE;
+
+    body_is_block := node_is( w.body, .BLOCK );
+
+    add_space := ( !force_braces && !body_is_block ) || ( remove_braces && body_is_block );
+    maybe_print_space( f, add_space );
     pop_alignment( f );
     if w.no_abc then print( f, " #no_abc" );
 
-    body_is_block := node_is( w.body, .BLOCK );
+    to_print := w.body;
+    block: Block;
+    if force_braces && !body_is_block
+    {
+        body := w.body;
+        block = make_block_from_node( body );
+        to_print = *block;
+
+        if body.location.l0 > w.location.l0
+        {
+            block.location.l0 = w.location.l0;
+            block.location.c0 = w.expression.location.c1 + 1;
+        }
+    }
+    else if remove_braces && body_is_block
+    {
+        b := w.body.( *Block );
+        if b.members.count == 1
+        {
+            to_print = b.members[ 0 ];
+        }
+    }
+
+    body_is_block = node_is( to_print, .BLOCK );
+
     if !body_is_block then f.indent_level += 1;
     f.new_scope_started = true;
-    print_node( f, w.body );
+    print_node( f, to_print );
     if !body_is_block then f.indent_level -= 1;
 }
 
@@ -1982,7 +2135,7 @@ print_operator :: ( f: *Jai_Formatter, op: $T )
     {
         print_space = false;
     }
-    maybe_print_space( f, print_space && f.previous_print_type != .NEW_LINE && f.previous_print_type != .INDENT);
+    maybe_print_space( f, print_space && f.previous_print_type != .NEW_LINE && f.previous_print_type != .INDENT );
     // NOTE: "%" is used here for the same reason as in here strings. % operator was treated as a format string.
     print( f, "%", get_operator_string( op ) );
     maybe_print_space( f, print_space );
@@ -2458,6 +2611,17 @@ get_indent_string :: ( config: Formatter_Config ) -> string
         print( *indent_builder, indent_char );
     }
     return builder_to_string( *indent_builder );
+}
+
+make_block_from_node :: ( node: *Node ) -> Block
+{
+    assert( node != null );
+    result: Block;
+    result.node = node.*;
+    result.kind = .BLOCK;
+    result.members = NewArray( 1, *Node );
+    result.members[ 0 ] = node;
+    return result;
 }
 
 Stack :: struct( type: Type )
