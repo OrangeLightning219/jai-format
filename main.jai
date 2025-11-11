@@ -52,13 +52,16 @@ main :: ()
         free_arguments = test_files;
     }
 
+    formatter := make_formatter( global_config );
+
     results: Table( string, Formatter_Status );
     for free_arguments
     {
         format :: ( file: string ) #expand
         {
-            status, output := format_file( global_config, file );
-            defer free( output.data );
+            status, output := format_file( *formatter, file );
+            defer reset_formatter( *formatter );
+
             table_add( *results, file, status );
             if status != .OK then return;
 

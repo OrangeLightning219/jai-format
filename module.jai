@@ -1,12 +1,15 @@
+#scope_file
 #import "Basic";
 #import "File";
 #import "String";
 #import "Hash_Table";
 #import "Reflection";
 #import "Text_File_Handler";
+#import "Flat_Pool";
 
 #import "jai_parser";
 
+#scope_export
 Node_Visit_Data :: struct {}
 node_visit :: ( node: *Node, user_data: Node_Visit_Data ) {}
 Formatter_Config :: struct
@@ -63,6 +66,8 @@ Alignment_Mode :: enum
 
 Jai_Formatter :: struct( Parser_Visit_Type: Type = Node_Visit_Data )
 {
+    pool: Flat_Pool;
+
     indent_level: int;
     indent_string: string;
     current_line: int = -1;
@@ -82,7 +87,8 @@ Jai_Formatter :: struct( Parser_Visit_Type: Type = Node_Visit_Data )
 
     current_comment_index: int;
 
-    parser: *Parser( Parser_Visit_Type );
+    parser: Parser( Parser_Visit_Type );
+    buffer_allocator: Allocator;
     buffer: []u8;
     max_buffer_size: int;
 
@@ -99,8 +105,11 @@ Jai_Formatter :: struct( Parser_Visit_Type: Type = Node_Visit_Data )
 FORMATTER_ENABLE_PROFILING :: true;
 // FORMATTER_ENABLE_PROFILING :: false;
 
-init_formatter :: ( f: *Jai_Formatter( $T ), config: Formatter_Config, parser: *Parser( T ) = null )
+make_formatter :: ( config: Formatter_Config ) -> Jai_Formatter( Node_Visit_Data )
 {
+    f: Jai_Formatter( Node_Visit_Data );
+    init( *f.pool );
+    f.buffer_allocator = context.allocator;
     f.config = config;
     f.indent_string = get_indent_string( config );
 
@@ -109,7 +118,20 @@ init_formatter :: ( f: *Jai_Formatter( $T ), config: Formatter_Config, parser: *
     f.buffer = NewArray( f.max_buffer_size, u8 );
     f.buffer.count = 0;
 
-    f.parser = parser;
+    return f;
+}
+
+reset_formatter :: ( f: *Jai_Formatter )
+{
+    reset( *f.pool );
+    f.buffer.count = 0;
+}
+
+deinit_formatter :: ( f: *Jai_Formatter )
+{
+    fini( *f.pool );
+    free( f.buffer.data,, f.buffer_allocator );
+    free( f.indent_string,, f.buffer_allocator );
 }
 
 Formatter_Status :: enum
@@ -119,8 +141,11 @@ Formatter_Status :: enum
     SKIPPED;
 }
 
-format_file :: ( config: Formatter_Config, file: string ) -> Formatter_Status, string
+format_file :: ( f: *Jai_Formatter, file: string ) -> Formatter_Status, string
 {
+    reset_formatter( f );
+    push_allocator( get_allocator( *f.pool ) );
+
     filename := path_filename( file );
     if !ends_with( filename, ".jai" ) || starts_with( filename, ".added_strings" )
     {
@@ -136,91 +161,32 @@ format_file :: ( config: Formatter_Config, file: string ) -> Formatter_Status, s
     }
     log( "Reading file '%' done.", file, flags = .VERBOSE_ONLY );
 
-    status, output := format_from_string( config, source_code, file );
-    return status, output;
-}
-
-format_from_string :: ( config: Formatter_Config, source_code: string, file := "" ) -> Formatter_Status, string
-{
-    f: Jai_Formatter;
-    init_formatter( *f, config );
-
-    log( "Lexing file '%'.", file, flags = .VERBOSE_ONLY );
-    #if FORMATTER_ENABLE_PROFILING { lexing_start := seconds_since_init(); }
-    // TODO: Catch lexing/parsing errors and don't format if there are any.
-    lexer := create_lexer( source_code, file );
-    #if FORMATTER_ENABLE_PROFILING { f.lexing_time = seconds_since_init() - lexing_start; }
-    log( "Lexing file '%' done.", file, flags = .VERBOSE_ONLY );
-
-    if lexer.tokens.count == 0
-    {
-        log_error( "Failed to parse file '%'. Looks like it's empty.", file );
-        return .ERROR, "";
-    }
-
-    parser: Parser( Node_Visit_Data );
-    parser.node_visit = node_visit;
-    parser.lexer = *lexer;
-
-    f.parser = *parser;
-
-    log( "Parsing file '%'.", file, flags = .VERBOSE_ONLY );
-    #if FORMATTER_ENABLE_PROFILING { parsing_start := seconds_since_init(); }
-    nodes: [ .. ]*Node;
-    while !end( parser.lexer )
-    {
-        node := parse( *parser, null );
-        if node
-        {
-            array_add( *nodes, node );
-        }
-    }
-    #if FORMATTER_ENABLE_PROFILING { f.parsing_time = seconds_since_init() - parsing_start; }
-    log( "Parsing file '%' done.", file, flags = .VERBOSE_ONLY );
-
+    nodes := get_nodes( f, source_code, file );
     if nodes.count == 0
     {
         log_error( "Failed to parse file '%'. Parser returned 0 nodes.", file );
         return .ERROR, "";
     }
 
-    status, result := format_from_nodes( *f, nodes, file );
-    return status, result;
+    status, output := format_from_nodes( f, nodes, file );
+    return status, output;
 }
 
-format_from_nodes :: ( f: *Jai_Formatter, nodes: []*Node, file := "" ) -> Formatter_Status, string
+// NOTE: file is only passed for logging purposes
+format_from_string :: ( f: *Jai_Formatter, source_code: string, file := "" ) -> Formatter_Status, string
 {
-    log( "Formatting file '%'.", file, flags = .VERBOSE_ONLY );
-    #if FORMATTER_ENABLE_PROFILING { formatting_start := seconds_since_init(); }
-    for nodes
+    reset_formatter( f );
+    push_allocator( get_allocator( *f.pool ) );
+
+    nodes := get_nodes( f, source_code, file );
+    if nodes.count == 0
     {
-        print_node( f, xx it );
+        log_error( "Failed to parse '%'. Parser returned 0 nodes.", ifx file else "string" );
+        return .ERROR, "";
     }
 
-    for f.current_comment_index..f.parser.lexer.comments.count - 1
-    {
-        // NOTE: Print any leftover comments
-        print_comment( f );
-    }
-
-    #if FORMATTER_ENABLE_PROFILING { f.formatting_time = seconds_since_init() - formatting_start; }
-    log( "Formatting file '%' done.", file, flags = .VERBOSE_ONLY );
-
-    #if FORMATTER_ENABLE_PROFILING
-    {
-        total := f.lexing_time + f.parsing_time + f.formatting_time;
-        log( "Lexing time:     %\n", f.lexing_time, flags = .VERBOSE_ONLY );
-        log( "Parsing time:    %\n", f.parsing_time, flags = .VERBOSE_ONLY );
-        log( "Formatting time: %\n", f.formatting_time, flags = .VERBOSE_ONLY );
-        log( "Total time:      %\n", total, flags = .VERBOSE_ONLY );
-    }
-
-    if !ends_with( xx f.buffer, "\n" )
-    {
-        maybe_print_new_line( f, true );
-    }
-    result: string = xx f.buffer;
-    return .OK, result;
+    status, result := format_from_nodes( f, nodes, file );
+    return status, result;
 }
 
 load_config :: ( file: string ) -> Formatter_Config
@@ -237,6 +203,7 @@ load_config :: ( file: string ) -> Formatter_Config
         log_error( "Failed to load config '%'. Using default configuration.", file );
         return result;
     }
+    defer deinit( *handler );
 
     unique_keys: Table( string, bool );
     while true
@@ -282,6 +249,85 @@ load_config :: ( file: string ) -> Formatter_Config
 
     log( "Loading config file: '%' done.", file, flags = .VERBOSE_ONLY );
     return result;
+}
+
+#scope_file
+
+get_nodes :: ( f: *Jai_Formatter, source_code: string, file := "" ) -> [ .. ]*Node
+{
+    log( "Lexing '%'.", ifx file else "string", flags = .VERBOSE_ONLY );
+    #if FORMATTER_ENABLE_PROFILING { lexing_start := seconds_since_init(); }
+    // TODO: Catch lexing/parsing errors and don't format if there are any.
+    lexer := New( Lexer );
+    lexer.* = create_lexer( source_code, file );
+    #if FORMATTER_ENABLE_PROFILING { f.lexing_time = seconds_since_init() - lexing_start; }
+    log( "Lexing '%' done.", ifx file else "string", flags = .VERBOSE_ONLY );
+
+    nodes: [ .. ]*Node;
+    if lexer.tokens.count == 0
+    {
+        log_error( "Failed to lex '%'. Looks like it's empty.", ifx file else "string" );
+    }
+    else
+    {
+        f.parser = .{};
+        f.parser.node_visit = node_visit;
+        f.parser.lexer = lexer;
+
+        log( "Parsing '%'.", ifx file else "string", flags = .VERBOSE_ONLY );
+        #if FORMATTER_ENABLE_PROFILING { parsing_start := seconds_since_init(); }
+        while !end( f.parser.lexer )
+        {
+            node := parse( *f.parser, null );
+            if node
+            {
+                array_add( *nodes, node );
+            }
+        }
+        #if FORMATTER_ENABLE_PROFILING { f.parsing_time = seconds_since_init() - parsing_start; }
+        log( "Parsing '%' done.", ifx file else "string", flags = .VERBOSE_ONLY );
+    }
+
+    return nodes;
+}
+
+// NOTE: file is only passed for logging purposes
+format_from_nodes :: ( f: *Jai_Formatter, nodes: []*Node, file := "" ) -> Formatter_Status, string
+{
+    push_allocator( get_allocator( *f.pool ) );
+
+    log( "Formatting '%'.", ifx file else "string", flags = .VERBOSE_ONLY );
+    #if FORMATTER_ENABLE_PROFILING { formatting_start := seconds_since_init(); }
+    for nodes
+    {
+        log( "%", it.kind );
+        print_node( f, xx it );
+    }
+
+    for f.current_comment_index..f.parser.lexer.comments.count - 1
+    {
+        // NOTE: Print any leftover comments
+        print_comment( f );
+    }
+
+    #if FORMATTER_ENABLE_PROFILING { f.formatting_time = seconds_since_init() - formatting_start; }
+    log( "Formatting '%' done.", ifx file else "string", flags = .VERBOSE_ONLY );
+
+    #if FORMATTER_ENABLE_PROFILING
+    {
+        total := f.lexing_time + f.parsing_time + f.formatting_time;
+        log( "Lexing time:     %\n", f.lexing_time, flags = .VERBOSE_ONLY );
+        log( "Parsing time:    %\n", f.parsing_time, flags = .VERBOSE_ONLY );
+        log( "Formatting time: %\n", f.formatting_time, flags = .VERBOSE_ONLY );
+        log( "Total time:      %\n", total, flags = .VERBOSE_ONLY );
+    }
+
+    if !ends_with( xx f.buffer, "\n" )
+    {
+        maybe_print_new_line( f, true );
+    }
+
+    return .OK, xx f.buffer;
 }
 
 // ============== Printing fucntions ============== 
@@ -2673,4 +2719,9 @@ pop :: ( stack: *Stack ) -> stack.type
         stack.count -= 1;
     }
     return result;
+}
+
+get_allocator :: inline ( pool: *Flat_Pool ) -> Allocator
+{
+    return .{ flat_pool_allocator_proc, pool };
 }

@@ -30,7 +30,25 @@ There are some CLI parameters you can use to alter the default behaviour:
 
 Example usage with some parameters: `jai-format -silent -to_stdout -to_file file.jai`.
 
-You can also use the formatter as a module by directly using the `format_file`, `format_from_string` and `format_from_nodes` functions.
+You can also use the formatter as a module by directly using the `format_file`, and `format_from_string` functions.
+For example: 
+```jai
+    config := load_config(config_file);
+    // make_formatter allocates the result buffer and an indentation string using whatever allocator is currently set in context.allocator
+    // In addition to that it also creates it's own Flat_Pool for other allocations needed during formatting
+    formatter := make_formatter( config );
+
+    status, output := format_file(*formatter, some_file);
+    // do something with the output
+    reset_formatter(*formatter); // After this the output is no longer valid. This only resets the Flat_Pool, it doesn't free the memory.
+
+    status, output = format_from_string(*formatter, some_code_string);
+    // do something with the output
+    reset_formatter(*formatter);
+
+    // If you care about freeing all the memory call deinit_formatter
+    deinit_formatter(*formatter);
+```
 
 ## Configuration
 - spaces_inside_parens: default = false\
@@ -219,7 +237,7 @@ To change the configuration create a `.jai-format` file in the working directory
 Options should be formatted like this: `option_name option_value`. You can use `#` to comment out lines in the config. See the `.jai-format` file in this repo for an exaxmple configuration.
 
 ## Runing the tests
-There are some automated tests that check the correctness of the formatted output. To run them just run `jai first.jai - tests`.
+There are some automated tests that check the correctness of the formatted output. To run them just run `jai first.jai - test`.
 
 ## Limitations
 - The biggest limitation right now is that the formatter assumes there are no syntax errors in your code. If you try formatting a file that has syntax errors it may or may not work properly. This is not a big issue if you're using the formatter directly in an editor because even if something goes wrong you can easily undo the changes. But when using the formatter as a cli tool with the `-to_file` parameter proceed with caution.

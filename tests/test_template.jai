@@ -20,8 +20,9 @@ test_formatting :: ( params: Test_Parameters ) -> bool
     config := params.config;
     // NOTE: Here strings only use \n as line endings. To use \r\n we would need to specify the ,cr modifier on #string. We don't want that to make sure that the tests can be run on any system.
     config.no_carriage_return_on_windows = true;
-    status, output := format_from_string( config, params.source_code );
-    defer free( output.data );
+    formatter := make_formatter(config);
+    defer deinit_formatter(*formatter);
+    status, output := format_from_string( *formatter, params.source_code );
 
     if status != params.expected_result
     {
@@ -109,12 +110,12 @@ print_config_diff :: ( config: Formatter_Config )
         ti := type_info( Formatter_Config );
         for ti.members
         {
-            print( *builder, #string,\% DONE
-            if config.%1 != default_config.%1 
-            { 
-                print("\% = \%;", "%1", config.%1); 
-                diff_found += 1;
-            }
+            print( *builder, #string,\% DONE
+            if config.%1 != default_config.%1 
+            { 
+                print("\% = \%;", "%1", config.%1); 
+                diff_found += 1;
+            }
             DONE,
 
                    it.name );
