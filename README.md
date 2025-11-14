@@ -140,6 +140,22 @@ For example:
                                                }
 ```
 
+- single_statement_line_mode: default = DONT_MODIFY\
+    Specifies wheter to keep, add or remove new lines to single statements in control flow expressions (`if`, `for`, `while`).
+    
+    Alowed values are:
+    - `DONT_MODIFY` - don't modify the new lines
+    - `NEW_LINE` - always add new line before single line statements
+    - `SAME_LINE` - always remove new line before single line statements
+    
+```
+    DONT_MODIFY:                           NEW_LINE:                     SAME_LINE:
+        if condition                           if condition                  if condition print("true");
+            print("true");                         print("true");            else print("false");
+        else print("false");                   else                          
+                                                   print("false"); 
+```
+
 - braces_on_new_line: default = false\
     If true opening braces will be put on a new line.\
     There is one exception to this option. If a opening and closing braces are on the same line the block will be kept as is.\

@@ -212,7 +212,8 @@ test :: () {
     if a b += a; else c *= a;
     if a
         b;
-    else c;
+    else
+        c;
 
     if a b;
     else c;
@@ -349,9 +350,7 @@ test :: () {
 
     if a {
         b;
-    } else {
-        c;
-    }
+    } else {c;}
 
     for things {print(it);}
     for things {
@@ -438,6 +437,176 @@ test :: () {
     while true print("true");
     while true
         print("true");
+}
+DONE;
+
+    return result;
+} @Test
+
+NEW_LINES :: #string DONE
+test :: () {
+    if a > b {
+        print("true");
+    } 
+    else {
+        print("false");
+    }
+
+    if a then b += a; else c *= a;
+    if a b += a; else c *= a;
+    if a 
+
+        b; 
+    else 
+        c;
+
+    if a     b; 
+    else c;
+
+    if a {b}; 
+    else {c};
+
+    if a {
+        b; 
+    }
+    else c;
+
+    for things print(it);
+    for things 
+        print(it);
+
+    while true print(it);
+    while true 
+        print(it);
+}
+DONE
+
+force_new_line :: () -> Test_Parameters
+{
+    using result: Test_Parameters;
+    config.single_statement_line_mode = .NEW_LINE;
+    source_code = NEW_LINES;
+    expected_output = #string DONE
+test :: () {
+    if a > b {
+        print("true");
+    } else {
+        print("false");
+    }
+
+    if a then b += a; else c *= a;
+    if a
+        b += a;
+    else
+        c *= a;
+    if a
+        b;
+    else
+        c;
+
+    if a
+        b;
+    else
+        c;
+
+    if a {b;}
+    else {c;}
+
+    if a {
+        b;
+    } else
+        c;
+
+    for things
+        print(it);
+    for things
+        print(it);
+
+    while true
+        print(it);
+    while true
+        print(it);
+}
+DONE;
+
+    return result;
+} @Test
+
+NEW_LINES1 :: #string DONE
+test :: () {
+    if a > b {
+        print("true");
+    } else {
+        print("false");
+    }
+
+    if a then b += a; else c *= a;
+    if a
+        b += a;
+    else
+        c *= a;
+    if a
+        b;
+    else
+        c;
+
+    if a
+        b;
+    else
+        c;
+
+    if a {b;}
+    else {c;}
+
+    if a {
+        b;
+    } else
+        c;
+
+    for things print(it);
+    for things 
+        print(it);
+
+    while true print(it);
+    while true 
+        print(it);
+}
+DONE;
+
+remove_new_line :: () -> Test_Parameters
+{
+    using result: Test_Parameters;
+    config.single_statement_line_mode = .SAME_LINE;
+    source_code = NEW_LINES1;
+    expected_output = #string DONE
+test :: () {
+    if a > b {
+        print("true");
+    } else {
+        print("false");
+    }
+
+    if a then b += a; else c *= a;
+    if a b += a;
+    else c *= a;
+    if a b;
+    else c;
+
+    if a b;
+    else c;
+
+    if a {b;}
+    else {c;}
+
+    if a {
+        b;
+    } else c;
+
+    for things print(it);
+    for things print(it);
+
+    while true print(it);
+    while true print(it);
 }
 DONE;
 

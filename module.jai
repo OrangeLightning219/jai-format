@@ -28,6 +28,8 @@ Formatter_Config :: struct
     struct_literal_alignment_mode := Alignment_Mode.NOT_SET;
 
     single_statement_brace_mode := Single_Statement_Brace_Mode.DONT_MODIFY;
+    single_statement_line_mode := Single_Statement_Line_Mode.DONT_MODIFY;
+    // single_statement_double_space := false;
     braces_on_new_line := false;
     quick_lambda_brace_on_new_line := false;
     else_on_new_line := false;
@@ -54,6 +56,13 @@ Single_Statement_Brace_Mode :: enum
     DONT_MODIFY;
     FORCE_ADD;
     FORCE_REMOVE;
+}
+
+Single_Statement_Line_Mode :: enum
+{
+    DONT_MODIFY;
+    SAME_LINE;
+    NEW_LINE;
 }
 
 Alignment_Mode :: enum
@@ -300,7 +309,6 @@ format_from_nodes :: ( f: *Jai_Formatter, nodes: []*Node, file := "" ) -> Format
     #if FORMATTER_ENABLE_PROFILING { formatting_start := seconds_since_init(); }
     for nodes
     {
-        log( "%", it.kind );
         print_node( f, xx it );
     }
 
@@ -1104,7 +1112,7 @@ print_if :: ( f: *Jai_Formatter, i: *If )
     if f.single_statement_brace_mode ==
     {
     case .FORCE_ADD;
-        force_braces = !i.then_keyword_used && i.if_kind != .IFX;
+        force_braces = !i.then_keyword_used && i.if_kind == .IF;
     case .FORCE_REMOVE;
         remove_braces = i.if_kind == .IF;
     }
@@ -1112,22 +1120,34 @@ print_if :: ( f: *Jai_Formatter, i: *If )
     if force_braces then assert( remove_braces == false );
     if remove_braces then assert( force_braces == false );
 
+    force_new_line: bool;
+    remove_new_line: bool;
+    if f.single_statement_line_mode ==
+    {
+    case .NEW_LINE;
+        force_new_line = !i.then_keyword_used && i.if_kind == .IF;
+    case .SAME_LINE;
+        remove_new_line = i.if_kind == .IF;
+    }
+
     then_is_block := node_is( i._then, .BLOCK );
+    same_line_then: bool;
     single_line_then: bool;
+
+    force_then_new_line: bool;
+    remove_then_new_line: bool;
 
     if i._then
     {
         to_print := i._then;
 
-        // single_line_then = !then_is_block && i.location.l0 == i._then.location.l0;
         block: Block;
         if force_braces && !then_is_block
         {
             block = make_block_from_node( i._then );
             to_print = *block;
 
-            single_line_then = i.location.l0 == i._then.location.l0;
-            if !single_line_then
+            if i.location.l0 != i._then.location.l0
             {
                 block.location.l0 = i.location.l0;
                 block.location.c0 = i.condition.location.c1 + 1;
@@ -1143,11 +1163,32 @@ print_if :: ( f: *Jai_Formatter, i: *If )
         }
 
         then_is_block = node_is( to_print, .BLOCK );
-        // single_line_then = to_print.location.l0 == to_print.location.l1;
+        same_line_then = i.location.l0 == to_print.location.l0;
+        single_line_then = to_print.location.l0 == to_print.location.l1;
+
+        // NOTE: Only force or remove new lines when then is not a block
+        force_then_new_line = force_new_line && !then_is_block && single_line_then && same_line_then;
+        remove_then_new_line = remove_new_line && !then_is_block && single_line_then && !same_line_then;
 
         f.new_scope_started = true;
         if !then_is_block then f.indent_level += 1;
-        maybe_print_space( f, !then_is_block );
+        maybe_print_space( f, !then_is_block && same_line_then && !force_then_new_line );
+
+        if force_then_new_line
+        {
+            maybe_print_new_line( f, true, true );
+
+            f.previous_line = f.current_line;
+            f.current_line = to_print.location.l0;
+        }
+
+        if remove_then_new_line
+        {
+            space( f );
+            f.previous_line = f.current_line;
+            f.current_line = to_print.location.l0;
+        }
+
         print_node( f, to_print, !then_is_block && i.if_kind == .IFX );
         if !then_is_block then f.indent_level -= 1;
     }
@@ -1155,25 +1196,23 @@ print_if :: ( f: *Jai_Formatter, i: *If )
     if i._else
     {
         f.new_scope_started = true;
-        single_line := i.location.l0 == i.location.l1;
-        print_space := ( then_is_block && !f.else_on_new_line ) || i.if_kind == .IFX || single_line;
+        single_line_if := i.location.l0 == i.location.l1;
+        print_space := ( then_is_block && !f.else_on_new_line ) || i.if_kind == .IFX || single_line_if;
         maybe_print_space( f, print_space );
 
-        else_already_on_new_line := i._else.location.l0 > i.location.l0;
         else_is_block := node_is( i._else, .BLOCK );
         to_print := i._else;
 
         block: Block;
-        new_line_after_else: bool;
         if force_braces && !else_is_block
         {
             block = make_block_from_node( i._else );
             to_print = *block;
 
-            if !single_line_then
+            if i.location.l0 != i._else.location.l0
             {
-                block.location.l1 += 1;
-                new_line_after_else = true;
+                block.location.l0 = i.else_location.l0;
+                block.location.c0 = i.else_location.c1 + 1;
             }
         }
         else if remove_braces && else_is_block
@@ -1185,37 +1224,66 @@ print_if :: ( f: *Jai_Formatter, i: *If )
             }
         }
 
+        same_line_else := i.else_location.l0 == to_print.location.l0;
+        single_line_else := to_print.location.l0 == to_print.location.l1;
         else_is_block = node_is( to_print, .BLOCK );
 
+        else_already_on_new_line := i.else_location.l0 > i.location.l0;
+
+        // NOTE: Only force or remove new lines when else is not a block
+        force_else_new_line := force_new_line && !else_is_block && single_line_else && same_line_else;
+        remove_else_new_line := remove_new_line && !else_is_block && single_line_else && !same_line_else;
+
         on_new_line: bool;
-        if i.if_kind == .IFX
+        if else_already_on_new_line
         {
-            on_new_line = ( then_is_block && f.else_on_new_line ) || ( else_already_on_new_line && !else_is_block );
+            on_new_line = true;
+            if then_is_block && !single_line_then && !f.else_on_new_line
+            {
+                on_new_line = false;
+            }
         }
         else
         {
-            after_then_block := then_is_block && !single_line_then && f.else_on_new_line;
-            on_new_line = after_then_block ||
-                          ( else_already_on_new_line &&
-                            ( !then_is_block || ( then_is_block && single_line_then ) ) );
+            if then_is_block && !single_line_then && f.else_on_new_line
+            {
+                on_new_line = true;
+            }
+            else if force_then_new_line
+            {
+                on_new_line = true;
+            }
         }
 
-        maybe_print_new_line( f, on_new_line );
-        if on_new_line
-        {
-            indent( f );
-        }
+        maybe_print_new_line( f, on_new_line, true );
         print( f, "else" );
 
-        if else_already_on_new_line
+        if on_new_line
         {
             f.previous_line = f.current_line;
-            f.current_line = i._else.location.l0;
+            f.current_line = i.else_location.l0;
         }
 
-        maybe_print_space( f, !else_is_block );
+        if !else_is_block && !node_is( i._else, .IF ) then f.indent_level += 1;
+        maybe_print_space( f, !else_is_block && same_line_else && !force_else_new_line );
+
+        if force_else_new_line
+        {
+            maybe_print_new_line( f, true, true );
+
+            f.previous_line = f.current_line;
+            f.current_line = to_print.location.l0;
+        }
+
+        if remove_else_new_line
+        {
+            space( f );
+            f.previous_line = f.current_line;
+            f.current_line = to_print.location.l0;
+        }
+
         print_node( f, to_print, !else_is_block && i.if_kind == .IFX );
-        maybe_print_new_line( f, new_line_after_else );
+        if !else_is_block && !node_is( i._else, .IF ) then f.indent_level -= 1;
     }
 }
 
@@ -1377,8 +1445,35 @@ print_for :: ( f: *Jai_Formatter, _for: *For )
         }
 
         body_is_block = node_is( to_print, .BLOCK );
+        same_line_body := to_print.location.l0 == _for.location.l0;
+        single_line_body := to_print.location.l0 == to_print.location.l1;
+
+        force_new_line: bool;
+        remove_new_line: bool;
+        if f.single_statement_line_mode ==
+        {
+        case .NEW_LINE;
+            force_new_line = !body_is_block && single_line_body && same_line_body;
+        case .SAME_LINE;
+            remove_new_line = !body_is_block && single_line_body && !same_line_body;
+        }
 
         if !body_is_block then f.indent_level += 1;
+
+        if force_new_line
+        {
+            maybe_print_new_line( f, true, true );
+
+            f.previous_line = f.current_line;
+            f.current_line = to_print.location.l0;
+        }
+
+        if remove_new_line
+        {
+            f.previous_line = f.current_line;
+            f.current_line = to_print.location.l0;
+        }
+
         f.new_scope_started = true;
         print_node( f, to_print );
         if !body_is_block then f.indent_level -= 1;
@@ -1426,8 +1521,35 @@ print_while :: ( f: *Jai_Formatter, w: *While )
     }
 
     body_is_block = node_is( to_print, .BLOCK );
+    same_line_body := to_print.location.l0 == w.location.l0;
+    single_line_body := to_print.location.l0 == to_print.location.l1;
+
+    force_new_line: bool;
+    remove_new_line: bool;
+    if f.single_statement_line_mode ==
+    {
+    case .NEW_LINE;
+        force_new_line = !body_is_block && single_line_body && same_line_body;
+    case .SAME_LINE;
+        remove_new_line = !body_is_block && single_line_body && !same_line_body;
+    }
 
     if !body_is_block then f.indent_level += 1;
+
+    if force_new_line
+    {
+        maybe_print_new_line( f, true, true );
+
+        f.previous_line = f.current_line;
+        f.current_line = to_print.location.l0;
+    }
+
+    if remove_new_line
+    {
+        f.previous_line = f.current_line;
+        f.current_line = to_print.location.l0;
+    }
+
     f.new_scope_started = true;
     print_node( f, to_print );
     if !body_is_block then f.indent_level -= 1;
