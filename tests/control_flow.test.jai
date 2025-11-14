@@ -612,3 +612,33 @@ DONE;
 
     return result;
 } @Test
+
+DOUBLE_SPACE:: #string DONE
+test :: () {
+    if a b += a;
+    else c *= a;
+
+    for things print(it);
+
+    while true print(it);
+}
+DONE;
+
+double_space :: () -> Test_Parameters
+{
+    using result: Test_Parameters;
+    config.single_statement_double_space = true;
+    source_code = DOUBLE_SPACE;
+    expected_output = #string DONE
+test :: () {
+    if a  b += a;
+    else  c *= a;
+
+    for things  print(it);
+
+    while true  print(it);
+}
+DONE;
+
+    return result;
+} @Test

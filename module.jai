@@ -29,7 +29,7 @@ Formatter_Config :: struct
 
     single_statement_brace_mode := Single_Statement_Brace_Mode.DONT_MODIFY;
     single_statement_line_mode := Single_Statement_Line_Mode.DONT_MODIFY;
-    // single_statement_double_space := false;
+    single_statement_double_space := false;
     braces_on_new_line := false;
     quick_lambda_brace_on_new_line := false;
     else_on_new_line := false;
@@ -1172,7 +1172,9 @@ print_if :: ( f: *Jai_Formatter, i: *If )
 
         f.new_scope_started = true;
         if !then_is_block then f.indent_level += 1;
-        maybe_print_space( f, !then_is_block && same_line_then && !force_then_new_line );
+        add_space := !then_is_block && same_line_then && !force_then_new_line;
+        maybe_print_space( f, add_space);
+        if f.single_statement_double_space && add_space then space(f);
 
         if force_then_new_line
         {
@@ -1265,7 +1267,9 @@ print_if :: ( f: *Jai_Formatter, i: *If )
         }
 
         if !else_is_block && !node_is( i._else, .IF ) then f.indent_level += 1;
-        maybe_print_space( f, !else_is_block && same_line_else && !force_else_new_line );
+        add_space := !else_is_block && same_line_else && !force_else_new_line;
+        maybe_print_space( f, add_space);
+        if f.single_statement_double_space && add_space then space(f);
 
         if force_else_new_line
         {
@@ -1404,6 +1408,7 @@ print_for :: ( f: *Jai_Formatter, _for: *For )
     {
         print_node( f, _for.iterator, true );
         add_space := ( !force_braces && !body_is_block ) || ( remove_braces && body_is_block );
+        if f.single_statement_double_space && add_space then space(f);
         maybe_print_space( f, add_space );
     }
 
@@ -1494,6 +1499,7 @@ print_while :: ( f: *Jai_Formatter, w: *While )
 
     add_space := ( !force_braces && !body_is_block ) || ( remove_braces && body_is_block );
     maybe_print_space( f, add_space );
+    if f.single_statement_double_space && add_space then space(f);
     pop_alignment( f );
     if w.no_abc then print( f, " #no_abc" );
 

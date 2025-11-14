@@ -5,6 +5,7 @@ spaces_around_operators               true
 braces_on_new_line                    true
 single_statement_brace_mode           DONT_MODIFY
 single_statement_line_mode            SAME_LINE
+single_statement_double_space         true
 quick_lambda_brace_on_new_line        false
 else_on_new_line                      true
 indent_case                           false

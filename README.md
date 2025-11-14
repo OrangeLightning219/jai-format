@@ -156,6 +156,14 @@ For example:
                                                    print("false"); 
 ```
 
+- single_statement_double_space: default = false\
+    If true two spaces will be added before single statements in control flow expressions (`if`, `for`, `while`).
+
+```
+    true:                           false:
+        if true  print("true");         if true print("true");
+```
+
 - braces_on_new_line: default = false\
     If true opening braces will be put on a new line.\
     There is one exception to this option. If a opening and closing braces are on the same line the block will be kept as is.\
