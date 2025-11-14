@@ -305,6 +305,12 @@ format_from_nodes :: ( f: *Jai_Formatter, nodes: []*Node, file := "" ) -> Format
 {
     push_allocator( get_allocator( *f.pool ) );
 
+    if f.parser.lexer.has_syntax_errors
+    {
+        log_error("Not formatting because code has syntax errors.");
+        return .ERROR, "";
+    }
+
     log( "Formatting '%'.", ifx file else "string", flags = .VERBOSE_ONLY );
     #if FORMATTER_ENABLE_PROFILING { formatting_start := seconds_since_init(); }
     for nodes

@@ -33,12 +33,28 @@ test :: ()
 }
 DONE
 
+ERRORS :: #string DONE
+test :: ()
+{
+    for value, 2: things {}
+}
+DONE
+
 #scope_export
 
 empty_test :: () -> Test_Parameters
 {
     using result: Test_Parameters;
     source_code = "";
+    expected_output = "";
+    expected_result = .ERROR;
+    return result;
+} @Test
+
+stop_on_syntax_error :: () -> Test_Parameters
+{
+    using result: Test_Parameters;
+    source_code = ERRORS;
     expected_output = "";
     expected_result = .ERROR;
     return result;

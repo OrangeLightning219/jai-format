@@ -322,6 +322,6 @@ vim.api.nvim_create_autocmd({"BufWritePost"}, {
 
 ## What's left to do (in order of importance)
 - Write more tests
-- Don't format if there are syntax errors. This relies on the jai_parser module checking for syntax errors which it currently doesn't.
+- Don't format if there are syntax errors. This relies on the jai_parser module checking for syntax errors which it currently doesn't (there's only minimal checking and not all errors are detected).
 - Add `//jai-format:off` and `//jai-format:on` comments that allow disabling the formatter in specific places.
 - Add `//jai-format:config_option=true` comments that allow overriding configuration options in specific places.
