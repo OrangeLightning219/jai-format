@@ -1,17 +1,7 @@
-for things print(it);
-for things 
-    print(it);
+Matrix3_Float16 :: struct {
+    _11, _12, _13: Float16;
+    _21, _22, _23: Float16;
+    _31, _32, _33: Float16;
 
-for things if a  print(it);
-
-for things {print(it);}
-for things {
-    print(it);
-}
-
-if a == {
-    case 1; print(); log();
-    case 2; print(); log();
-    case 3; print(); 
-    log();
+    #overlay (_11) floats: [9] Float16;  // 'floats' is a little misleading, but this is what the member is called in Matrix3.
 }

@@ -1984,6 +1984,17 @@ print_directive :: ( f: *Jai_Formatter, d: *$T, no_semicolon := false )
         semicolon( f );
         space( f );
 
+    case Directive_Overlay;
+        print( f, "#overlay " );
+        print(f, "(");
+        maybe_print_space(f, f.spaces_inside_parens);
+        print_node(f, d.field);
+        maybe_print_space(f, f.spaces_inside_parens);
+        print(f, ") ");
+        print_node( f, d.expression );
+        // semicolon( f );
+        // space( f );
+
     case Directive_Type;
         print( f, "#type" );
         if d.isa then print( f, ",isa" );
