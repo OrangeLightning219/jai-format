@@ -16,6 +16,8 @@ build :: ()
         return;
     }
 
+    make_directory_if_it_does_not_exist( "build" );
+
     options := get_build_options( w );
     options.output_executable_name = "jai-format";
     options.output_path = "build";
