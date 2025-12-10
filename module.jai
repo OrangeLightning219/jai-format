@@ -385,7 +385,7 @@ print_node :: ( f: *Jai_Formatter, node: *Node, no_semicolon := false )
         }
     case .IDENTIFIER; print_identifier( f, xx node, no_semicolon );
     case .TYPE_INSTANTIATION; print_type_instantiation( f, xx node );
-    case .DECLARATION; print_declaration( f, xx node );
+    case .DECLARATION; print_declaration( f, xx node, no_semicolon = no_semicolon );
     case .COMPOUND_DECLARATION; print_compound_declaration( f, xx node );
         // NOTE: This should only be called from print_compound_declaration;
         // case .COMPOUND_DECLARATION_ITEM; print_compound_declaration_item(f, xx node);
@@ -554,7 +554,7 @@ print_type_instantiation :: ( f: *Jai_Formatter, t: *Type_Instantiation )
     print_node( f, t.expression );
 }
 
-print_declaration :: ( f: *Jai_Formatter, d: *Declaration, compound_type := Compound_Declaration_Item.Item_Kind.DECLARATION )
+print_declaration :: ( f: *Jai_Formatter, d: *Declaration, compound_type := Compound_Declaration_Item.Item_Kind.DECLARATION, no_semicolon := false )
 {
     if d.backticked then print( f, "`" );
 
@@ -650,7 +650,8 @@ print_declaration :: ( f: *Jai_Formatter, d: *Declaration, compound_type := Comp
        not_struct_ti &&
        not_struct_exp &&
        // !compound &&
-       !f.inside_arguments
+       !f.inside_arguments &&
+       !no_semicolon
     {
         semicolon( f );
     }
@@ -1585,7 +1586,7 @@ print_while :: ( f: *Jai_Formatter, w: *While )
     }
 
     f.new_scope_started = true;
-    print_node( f, to_print );
+    print_node( f, to_print, true );
     if !body_is_block then f.indent_level -= 1;
 }
 
