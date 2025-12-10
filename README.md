@@ -226,6 +226,15 @@ For example:
     true:                           false:
         // comment                      //comment
 ```
+- keep_whitespace_before_single_line_comments: default = false\
+    If true whitespace before single line comments at the end of the line will be kept as is.\
+    Currently this option only works if `indent_mode` is set to `SPACES`.
+
+```
+    true:                                           false:
+        print("asd");    // aligned comment             print("asd"); // comment
+        print("asdzxc"); // aligned comment             print("asdzxc"); // comment
+```
 - max_empty_lines_to_keep: default = 1\
     Maximum amount of empty lines that will be kept when formatting.\
     Empty lines at the beginning of a scope will be removed regardless of what this option is set to.\

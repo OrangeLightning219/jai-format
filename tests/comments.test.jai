@@ -87,3 +87,49 @@ DONE;
 
     return result;
 } @Test
+
+COMMENTS_WHITESPACE :: #string DONE
+test :: () {
+    print("asd");    // comment 1
+    print("asdzxc"); // comment 2
+    print("asd");    // comment 3
+    a := 1 + 2;      // comment 4 
+
+    print("asd");    // comment 5
+    print("asdzxc");// comment 6
+    print("asd");  // comment 7
+    a := 1 + 2;   // comment 8 
+
+        print("asd");      // comment 9
+print("asd");      // comment 10
+    print("asd");      // comment 11
+    print( "asd" );    // comment 12
+}
+DONE
+
+comments_whitespace :: () -> Test_Parameters
+{
+    using result: Test_Parameters;
+    source_code = COMMENTS_WHITESPACE;
+    config.keep_whitespace_before_single_line_comments = true;
+    expected_output = #string DONE
+test :: () {
+    print("asd");    // comment 1
+    print("asdzxc"); // comment 2
+    print("asd");    // comment 3
+    a := 1 + 2;      // comment 4 
+
+    print("asd");    // comment 5
+    print("asdzxc");// comment 6
+    print("asd");  // comment 7
+    a := 1 + 2;   // comment 8 
+
+    print("asd");      // comment 9
+    print("asd");      // comment 10
+    print("asd");      // comment 11
+    print("asd");    // comment 12
+}
+DONE;
+
+    return result;
+} @Test

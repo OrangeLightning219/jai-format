@@ -36,6 +36,7 @@ Formatter_Config :: struct
     indent_case := false;
     surround_multiple_returns_with_parens := false;
     insert_space_in_single_line_comments := true;
+    keep_whitespace_before_single_line_comments := false;
     max_empty_lines_to_keep := 1;
 
     indent_mode := Indent_Mode.SPACES;
@@ -85,8 +86,12 @@ Jai_Formatter :: struct( Parser_Visit_Type: Type = Node_Visit_Data )
     current_collumn: int;
     current_alignment: int;
     alignments: [ .. ]int;
-    previous_print_type: enum { STRING; NEW_LINE; TAB; INDENT; SPACE; }
+    previous_print_type: enum { STRING; NEW_LINE; TAB; INDENT; SPACE; SEMICOLON; }
     new_scope_started: bool;
+
+    current_min_source_collumn: int;
+    current_max_source_collumn: int;
+    last_node: *Node;
 
     inside_arguments: bool;
     inside_arguments_count: int;
@@ -307,7 +312,7 @@ format_from_nodes :: ( f: *Jai_Formatter, nodes: []*Node, file := "" ) -> Format
 
     if f.parser.lexer.has_syntax_errors
     {
-        log_error("Not formatting because code has syntax errors.");
+        log_error( "Not formatting because code has syntax errors." );
         return .ERROR, "";
     }
 
@@ -352,7 +357,22 @@ print_node :: ( f: *Jai_Formatter, node: *Node, no_semicolon := false )
 
     print_comments( f, node );
 
-    insert_new_lines( f, node );
+    if node.location.l0 > f.current_line
+    {
+        f.current_max_source_collumn = 0;
+        f.current_min_source_collumn = 1000;
+    }
+
+    lines_added := insert_new_lines( f, node );
+    if lines_added == 0 && f.previous_print_type == .SEMICOLON
+    {
+        space( f );
+    }
+
+    f.current_min_source_collumn = min( f.current_min_source_collumn, node.location.c0 );
+    f.current_max_source_collumn = max( f.current_max_source_collumn, node.location.c1 );
+
+    log( "print node: %, %", node.kind, node.location );
 
     if node.kind ==
     {
@@ -439,6 +459,8 @@ print_node :: ( f: *Jai_Formatter, node: *Node, no_semicolon := false )
             return tprint( FORMAT, builder_to_string( *builder ) );
         }
     }
+
+    f.last_node = node;
 }
 
 print_block :: ( f: *Jai_Formatter, b: *Block, is_modify := false )
@@ -457,7 +479,7 @@ print_block :: ( f: *Jai_Formatter, b: *Block, is_modify := false )
     else
     {
         // NOTE: If we're below the parent in the original code that means insert_new_lines already inserted a proper amount of new lines. 
-        same_line_as_parent := f.previous_print_type == .STRING;
+        same_line_as_parent := f.previous_print_type == .STRING || f.previous_print_type == .SEMICOLON;
         // same_line_as_parent := b.location.l0 == b.parent.location.l0;
         on_new_line = f.braces_on_new_line && ( ( !same_line_as_parent && single_line ) || ( !single_line && same_line_as_parent ) );
     }
@@ -1179,8 +1201,8 @@ print_if :: ( f: *Jai_Formatter, i: *If )
         f.new_scope_started = true;
         if !then_is_block then f.indent_level += 1;
         add_space := !then_is_block && same_line_then && !force_then_new_line;
-        maybe_print_space( f, add_space);
-        if f.single_statement_double_space && add_space then space(f);
+        maybe_print_space( f, add_space );
+        if f.single_statement_double_space && add_space then space( f );
 
         if force_then_new_line
         {
@@ -1274,8 +1296,8 @@ print_if :: ( f: *Jai_Formatter, i: *If )
 
         if !else_is_block && !node_is( i._else, .IF ) then f.indent_level += 1;
         add_space := !else_is_block && same_line_else && !force_else_new_line;
-        maybe_print_space( f, add_space);
-        if f.single_statement_double_space && add_space then space(f);
+        maybe_print_space( f, add_space );
+        if f.single_statement_double_space && add_space then space( f );
 
         if force_else_new_line
         {
@@ -1414,7 +1436,7 @@ print_for :: ( f: *Jai_Formatter, _for: *For )
     {
         print_node( f, _for.iterator, true );
         add_space := ( !force_braces && !body_is_block ) || ( remove_braces && body_is_block );
-        if f.single_statement_double_space && add_space then space(f);
+        if f.single_statement_double_space && add_space then space( f );
         maybe_print_space( f, add_space );
     }
 
@@ -1505,7 +1527,7 @@ print_while :: ( f: *Jai_Formatter, w: *While )
 
     add_space := ( !force_braces && !body_is_block ) || ( remove_braces && body_is_block );
     maybe_print_space( f, add_space );
-    if f.single_statement_double_space && add_space then space(f);
+    if f.single_statement_double_space && add_space then space( f );
     pop_alignment( f );
     if w.no_abc then print( f, " #no_abc" );
 
@@ -1986,11 +2008,11 @@ print_directive :: ( f: *Jai_Formatter, d: *$T, no_semicolon := false )
 
     case Directive_Overlay;
         print( f, "#overlay " );
-        print(f, "(");
-        maybe_print_space(f, f.spaces_inside_parens);
-        print_node(f, d.field);
-        maybe_print_space(f, f.spaces_inside_parens);
-        print(f, ") ");
+        print( f, "(" );
+        maybe_print_space( f, f.spaces_inside_parens );
+        print_node( f, d.field );
+        maybe_print_space( f, f.spaces_inside_parens );
+        print( f, ") " );
         print_node( f, d.expression );
         // semicolon( f );
         // space( f );
@@ -2267,8 +2289,27 @@ print_comment :: ( f: *Jai_Formatter )
     node.location.l0 = c.l0;
     node.location.l1 = end_line;
     insert_new_lines( f, *node );
-    add_space := !c.multiline && f.current_line == c.l0 && f.current_collumn > 0 && f.previous_print_type == .STRING;
-    maybe_print_space( f, add_space );
+    after_statement := ( f.previous_print_type == .STRING || f.previous_print_type == .SEMICOLON ) && f.current_line == c.l0;
+    if f.indent_mode == .SPACES && f.keep_whitespace_before_single_line_comments &&
+       !c.multiline && after_statement
+    {
+        space_diff := c.c0 - f.current_max_source_collumn;
+        // NOTE: Hack because procedure calls don't include the semicolon in their location
+        if node_is( f.last_node, .PROCEDURE_CALL ) && node_is( f.last_node.( *Procedure_Call ).procedure, .IDENTIFIER )
+        {
+            space_diff -= 1;
+        }
+
+        for 0..space_diff - 1
+        {
+            space( f );
+        }
+    }
+    else
+    {
+        add_space := !c.multiline && f.current_collumn > 0 && after_statement;
+        maybe_print_space( f, add_space );
+    }
     print( f, format, c.string_value );
 }
 
@@ -2346,7 +2387,7 @@ standalone_expression :: ( e: *Node ) -> bool
            e.parent == null;
 }
 
-insert_new_lines :: ( f: *Jai_Formatter, node: *Node )
+insert_new_lines :: ( f: *Jai_Formatter, node: *Node ) -> int
 {
     lines_added := 0;
     node_line := node.location.l0;
@@ -2390,6 +2431,8 @@ insert_new_lines :: ( f: *Jai_Formatter, node: *Node )
     }
 
     f.new_scope_started = false;
+
+    return lines_added;
 }
 
 get_operator_string :: ( op: $T ) -> string
@@ -2568,6 +2611,7 @@ semicolon :: ( f: *Jai_Formatter )
     if !f.inside_code_argument
     {
         print( f, ";" );
+        f.previous_print_type = .SEMICOLON;
     }
 }
 
