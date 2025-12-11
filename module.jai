@@ -364,7 +364,8 @@ print_node :: ( f: *Jai_Formatter, node: *Node, no_semicolon := false )
     }
 
     lines_added := insert_new_lines( f, node );
-    if lines_added == 0 && f.previous_print_type == .SEMICOLON
+    if lines_added == 0 && f.previous_print_type == .SEMICOLON &&
+       !node_is( node, .NOTE ) // TODO: Are there any other nodes that don't need this space?
     {
         space( f );
     }
