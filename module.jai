@@ -849,9 +849,9 @@ print_procedure_call :: ( f: *Jai_Formatter, p: *Procedure_Call, no_semicolon :=
         print( f, "`" );
     }
 
-    if p.procedure && p.procedure.kind == .IDENTIFIER
+    if p.procedure
     {
-        print( f, p.procedure.( *Identifier ).name );
+        print_node( f, p.procedure );
     }
 
     empty_args := p.arguments.count == 0 && p.context_changes.count == 0;
@@ -1587,7 +1587,7 @@ print_while :: ( f: *Jai_Formatter, w: *While )
     }
 
     f.new_scope_started = true;
-    print_node( f, to_print, true );
+    print_node( f, to_print );
     if !body_is_block then f.indent_level -= 1;
 }
 

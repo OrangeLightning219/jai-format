@@ -35,7 +35,7 @@ main :: ()
         cli_args.verbose = true;
         // cli_args.config_file = "";
     }
-    if !ok then  return;
+    if !ok then return;
 
     context.logger = custom_logger;
     context.logger_data = *cli_args;
@@ -63,7 +63,7 @@ main :: ()
             defer reset_formatter( *formatter );
 
             table_add( *results, file, status );
-            if status != .OK then  return;
+            if status != .OK then return;
 
             if cli_args.to_stdout
             {
@@ -104,8 +104,8 @@ main :: ()
     success_count: int;
     for result, file: results
     {
-        if result == .ERROR then  failed_count += 1;
-        if result == .OK then  success_count += 1;
+        if result == .ERROR then failed_count += 1;
+        if result == .OK then success_count += 1;
     }
 
     log( "========== Summary ==========" );
@@ -113,7 +113,7 @@ main :: ()
     {
         log_nnl( "Failed to format" );
         with_console_color( .HI_RED, log_nnl( " % ", failed_count ), .BOLD );
-        log( "file%", ifx failed_count == 1 then  "" else  "s" );
+        log( "file%", ifx failed_count == 1 then "" else "s" );
         for result, file: results
         {
             if result == .ERROR
@@ -125,7 +125,7 @@ main :: ()
 
     log_nnl( "Succesfully formatted" );
     with_console_color( .HI_GREEN, log_nnl( " % ", success_count ), .BOLD );
-    log( "file%", ifx success_count == 1 then  "" else  "s" );
+    log( "file%", ifx success_count == 1 then "" else "s" );
     for result, file: results
     {
         if result == .OK
@@ -168,15 +168,15 @@ custom_logger :: ( message: string, data: *void, info: Log_Info )
         prefix = "[WARNING]";
     }
 
-    if !data then  return;
+    if !data then return;
 
     args := data.( *CLI_Arguments );
-    if args.silent then  return;
-    if !args.verbose && info.common_flags == .VERBOSE_ONLY then  return;
+    if args.silent then return;
+    if !args.verbose && info.common_flags == .VERBOSE_ONLY then return;
 
     if prefix
     {
-        color: Ansi.Console_Color = ifx info.common_flags == .ERROR then  .HI_RED else  .HI_YELLOW;
+        color: Ansi.Console_Color = ifx info.common_flags == .ERROR then .HI_RED else .HI_YELLOW;
         with_console_color( color, write_string( prefix ), .BOLD );
         write_string( " " );
     }
@@ -188,7 +188,7 @@ custom_logger :: ( message: string, data: *void, info: Log_Info )
     if !( user_flags & .NO_NEW_LINE > 0 )
     {
         ends_with_new_line := s[ s.count - 1 ] == #char "\n";
-        if !ends_with_new_line then  write_string( "\n" );
+        if !ends_with_new_line then write_string( "\n" );
     }
 }
 
@@ -203,7 +203,7 @@ is_tty :: () -> bool
         result := GetConsoleMode( fd, *mode );
         return result != 0;
     }
-    else  if OS == .LINUX || OS == .MACOS
+    else if OS == .LINUX || OS == .MACOS
     {
         #import "POSIX";
         return isatty( 1 ) != 0;
