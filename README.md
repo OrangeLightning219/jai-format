@@ -246,6 +246,14 @@ For example:
     }
 ```
 
+- space_after_cast: default = false\
+    If true a space will be added after a cast
+    For example:
+```
+    true:                           false:
+        a := cast(u16) 5;               a := cast(u16)5;
+```
+
 - indent_mode : default = SPACES\
     What character to use for indentation. Either `SPACES` or `TABS`.
 

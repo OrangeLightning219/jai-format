@@ -39,6 +39,8 @@ Formatter_Config :: struct
     keep_whitespace_before_single_line_comments := false;
     max_empty_lines_to_keep := 1;
 
+    space_after_cast := false;
+
     indent_mode := Indent_Mode.SPACES;
     indent_width := 4;
     tab_width := 4;
@@ -1802,6 +1804,7 @@ print_cast :: ( f: *Jai_Formatter, c: *Cast )
         open_paren( f );
         print_node( f, c.cast_expression );
         close_paren( f );
+        maybe_print_space( f, f.space_after_cast );
         print_node( f, c.expression );
     }
 }

@@ -20,3 +20,4 @@ indent_width                                4
 indent_mode                                 SPACES
 no_carriage_return_on_windows               false
 alignment_mode                              EXACT
+space_after_cast                            true
