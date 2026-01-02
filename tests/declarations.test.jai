@@ -205,3 +205,81 @@ DONE;
 
     return result;
 } @Test
+
+STRUCT_UNION_ENUM :: #string DONE
+Union_Tag :: enum
+{
+    A;
+    B;
+    C;
+}
+
+Test_Union :: union tag: Union_Tag {
+    a: int;
+    b: float;
+    c: string;
+}
+
+Test_Union :: union tag: enum {
+    A;
+    B;
+    C;
+}
+{
+    a: int;
+    b: float;
+    c: string;
+}
+
+Test_Union :: union @TestNote tag: enum @Note {
+    A;
+    B;
+    C;
+} @Note
+{
+    a: int;
+    b: float;
+    c: string;
+} @Note
+DONE
+
+struct_union_enum :: () -> Test_Parameters
+{
+    using result: Test_Parameters;
+    source_code = STRUCT_UNION_ENUM;
+    expected_output = #string DONE
+Union_Tag :: enum {
+    A;
+    B;
+    C;
+}
+
+Test_Union :: union tag: Union_Tag {
+    a: int;
+    b: float;
+    c: string;
+}
+
+Test_Union :: union tag: enum {
+    A;
+    B;
+    C;
+} {
+    a: int;
+    b: float;
+    c: string;
+}
+
+Test_Union :: union @TestNote tag: enum @Note {
+    A;
+    B;
+    C;
+} @Note {
+    a: int;
+    b: float;
+    c: string;
+} @Note
+DONE;
+
+    return result;
+} @Test

@@ -123,6 +123,13 @@ For example:
 
     If any of these options are not set then the value of `alignment_mode` will be used.
 
+- struct_literal_dot_mode: default = FORCE\
+    Specifies wheter to always add or remove a dot before a struct literal.
+```
+    FORCE:                               REMOVE:
+        a := make_struct(.{1, 2, 3});         a := make_struct({1, 2, 3});
+```
+
 - single_statement_brace_mode: default = DONT_MODIFY\
     Specifies wheter to keep, add or remove braces to single statements in control flow expressions (`if`, `for`, `while`).
     

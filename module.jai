@@ -26,6 +26,7 @@ Formatter_Config :: struct
     parens_alignment_mode := Alignment_Mode.NOT_SET;
     brackets_alignment_mode := Alignment_Mode.NOT_SET;
     struct_literal_alignment_mode := Alignment_Mode.NOT_SET;
+    struct_literal_dot_mode := Struct_Literal_Dot_Mode.FORCE;
 
     single_statement_brace_mode := Single_Statement_Brace_Mode.DONT_MODIFY;
     single_statement_line_mode := Single_Statement_Line_Mode.DONT_MODIFY;
@@ -66,6 +67,12 @@ Single_Statement_Line_Mode :: enum
     DONT_MODIFY;
     SAME_LINE;
     NEW_LINE;
+}
+
+Struct_Literal_Dot_Mode :: enum
+{
+    FORCE;
+    REMOVE;
 }
 
 Alignment_Mode :: enum
@@ -1080,7 +1087,21 @@ print_literal :: ( f: *Jai_Formatter, l: *Literal )
         }
 
         is_empty := struct_info.body.count == 0;
-        print( f, ".{" );
+
+        if !struct_info.type
+        {
+            if f.struct_literal_dot_mode ==
+            {
+            case .FORCE;
+                print( f, ".{" );
+            case .REMOVE;
+                print( f, "{" );
+            }
+        }
+        else
+        {
+            print( f, ".{" );
+        }
         maybe_print_space( f, f.spaces_inside_literals && !is_empty );
 
         push_alignment( f, f.struct_literal_alignment_mode );
@@ -1748,6 +1769,12 @@ print_union :: ( f: *Jai_Formatter, u: *Union )
         {
             print_node( f, it );
         }
+    }
+
+    if u.tag
+    {
+        space( f );
+        print_node( f, u.tag, true );
     }
 
     print_node( f, u.block );
