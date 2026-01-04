@@ -3,6 +3,7 @@ spaces_inside_brackets                      true
 spaces_inside_literals                      true
 spaces_around_operators                     true
 braces_on_new_line                          true
+struct_literal_dot_mode                     FORCE 
 single_statement_brace_mode                 DONT_MODIFY
 single_statement_line_mode                  SAME_LINE
 single_statement_double_space               false

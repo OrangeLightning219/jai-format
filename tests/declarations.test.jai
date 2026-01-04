@@ -73,6 +73,9 @@ test :: () {
             B;
         }
     }
+
+    a := queue.Node.{ 1, 2 };
+    b := *c.#insert member;
 }
 DONE
 
@@ -155,6 +158,9 @@ test :: () {
             B;
         }
     }
+
+    a := queue.Node.{1, 2};
+    b := *c.#insert member;
 }
 DONE;
 

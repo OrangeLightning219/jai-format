@@ -382,7 +382,7 @@ print_node :: ( f: *Jai_Formatter, node: *Node, no_semicolon := false )
     f.current_min_source_collumn = min( f.current_min_source_collumn, node.location.c0 );
     f.current_max_source_collumn = max( f.current_max_source_collumn, node.location.c1 );
 
-    // log( "print node: %, %", node.kind, node.location );
+    // log( "print node: %, %, parent: %", node.kind, node.location, ifx node.parent then node.parent.kind else .UNINITIALIZATED);
 
     if node.kind ==
     {
