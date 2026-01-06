@@ -1,5 +1,5 @@
 test :: ()
 {
-    a := queue.Node.{ 1, 2 };
-    b := *c.#insert member;
+    position : Vector3;
+    position = {0,0,0};
 }
