@@ -8,6 +8,14 @@ test :/*asd*/: (param/*asd*/: int) /*zxc*/ -> /*asd*/ int
 
     // a := b; // test
     a := b; //test
+
+    if 1 
+    {
+    }
+    // comment for else
+    else if 2 
+    {
+    }
 }
 // test
 
@@ -44,9 +52,12 @@ DONE
 comments :: () -> Test_Parameters
 {
     using result: Test_Parameters;
+    config.braces_on_new_line = true;
+    config.else_on_new_line = true;
     source_code = COMMENTS;
     expected_output = #string DONE
-test :: /*asd*/(param: /*asd*/int) -> /*zxc*//*asd*/int {
+test :: /*asd*/(param: /*asd*/int) -> /*zxc*//*asd*/int
+{
     /*`max_buffer_size = new_size;*/
     a: /*zxc*/int;
 
@@ -54,6 +65,14 @@ test :: /*asd*/(param: /*asd*/int) -> /*zxc*//*asd*/int {
 
     // a := b; // test
     a := b; // test
+
+    if 1
+    {
+    }
+    // comment for else
+    else if 2
+    {
+    }
 }
 // test
 
@@ -71,7 +90,8 @@ test :: /*asd*/(param: /*asd*/int) -> /*zxc*//*asd*/int {
  some long explanation 
  some long explanation 
 */
-asd :: #run,host -> /*asdasd*/string {
+asd :: #run,host -> /*asdasd*/string
+{
     return "asd";
 }
 // comments at end of file

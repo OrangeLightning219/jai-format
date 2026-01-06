@@ -536,12 +536,9 @@ print_block :: ( f: *Jai_Formatter, b: *Block, is_modify := false )
     if !single_line
     {
         f.indent_level -= 1;
-    }
-
-    if !single_line
-    {
         indent( f );
     }
+
     print( f, "}" );
 
     f.new_scope_started = false;
@@ -1311,6 +1308,16 @@ print_if :: ( f: *Jai_Formatter, i: *If )
         }
 
         maybe_print_new_line( f, on_new_line, true );
+
+        // TODO: This is a very hacky way to handle comments after the if block but before the 'else' keyword
+        {
+            current_line := f.current_line;
+            f.current_line = i._else.location.l0;
+            comments_printed := print_comments( f, i._else );
+            maybe_print_new_line( f, comments_printed, true );
+            f.current_line = current_line;
+        }
+
         print( f, "else" );
 
         if on_new_line
