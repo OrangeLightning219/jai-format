@@ -21,7 +21,13 @@ build :: ()
     options := get_build_options( w );
     options.output_executable_name = "jai-format";
     options.output_path = "build";
-    options.backend = .X64;
+
+    #if CPU == .X64 {
+        options.backend = .X64;
+    } else {
+        options.backend = .LLVM;
+    }
+
     // options.text_output_flags = .OUTPUT_TIMING_INFO;
     options.text_output_flags = 0;
 
