@@ -638,25 +638,18 @@ print_declaration :: ( f: *Jai_Formatter, d: *Declaration, compound_type := Comp
         }
     }
 
-    // TODO: This is ugly. Figure out something better here
-    is_insert_with_block := node_is( check, .DIRECTIVE_INSERT ) && node_is( check.( *Directive_Insert ).expression, .BLOCK );
-    is_run_with_block := node_is( check, .DIRECTIVE_RUN ) && node_is( check.( *Directive_Run ).expression, .BLOCK );
-    is_code_with_block := node_is( check, .DIRECTIVE_CODE ) && node_is( check.( *Directive_Code ).expression, .BLOCK );
-    ti := d.type_inst;
-    not_struct_ti := !ti || ( ti && !node_is( ti, .STRUCT ) &&
-                              !node_is( ti, .ENUM ) &&
-                              !node_is( ti, .UNION ) );
-    not_struct_exp := !node_is( d.expression, .STRUCT ) &&
-                      !node_is( d.expression, .ENUM ) &&
-                      !node_is( d.expression, .UNION );
-    if !node_is( d.expression, .PROCEDURE ) &&
-       !node_is( d.expression, .DIRECTIVE_STRING ) &&
-       !is_insert_with_block &&
-       !is_run_with_block &&
-       !is_code_with_block &&
-       not_struct_ti &&
-       not_struct_exp &&
-       // !compound &&
+    ends_with_block: bool;
+    ends_with_block |= node_is( check, .DIRECTIVE_INSERT ) && node_is( check.( *Directive_Insert ).expression, .BLOCK );
+    ends_with_block |= node_is( check, .DIRECTIVE_RUN ) && node_is( check.( *Directive_Run ).expression, .BLOCK );
+    ends_with_block |= node_is( check, .DIRECTIVE_CODE ) && node_is( check.( *Directive_Code ).expression, .BLOCK );
+
+    ends_with_block |= node_is( check, .STRUCT );
+    ends_with_block |= node_is( check, .ENUM );
+    ends_with_block |= node_is( check, .UNION );
+    ends_with_block |= node_is( check, .PROCEDURE );
+    ends_with_block |= node_is( check, .DIRECTIVE_STRING );
+
+    if !ends_with_block &&
        !f.inside_arguments &&
        !no_semicolon
     {

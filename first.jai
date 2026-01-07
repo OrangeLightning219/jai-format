@@ -22,9 +22,12 @@ build :: ()
     options.output_executable_name = "jai-format";
     options.output_path = "build";
 
-    #if CPU == .X64 {
+    #if CPU == .X64
+    {
         options.backend = .X64;
-    } else {
+    } 
+    else
+    {
         options.backend = .LLVM;
     }
 
