@@ -628,13 +628,17 @@ print_declaration :: ( f: *Jai_Formatter, d: *Declaration, compound_type := Comp
     if !d.expression && d.type_inst
     {
         check = d.type_inst;
-        if node_is( d.type_inst, .UNARY_OPERATION )
+        while true
         {
-            check = d.type_inst.( *Unary_Operation ).expression;
-        }
-        else if node_is( d.type_inst, .ARRAY_TYPE )
-        {
-            check = d.type_inst.( *Array_Type ).element_type;
+            if check.kind ==
+            {
+            case .UNARY_OPERATION;
+                check = check.( *Unary_Operation ).expression;
+            case .ARRAY_TYPE;
+                check = check.( *Array_Type ).element_type;
+            case;
+                break;
+            }
         }
     }
 

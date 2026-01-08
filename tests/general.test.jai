@@ -195,3 +195,31 @@ DONE;
 
     return result;
 } @Test
+
+WIERD_STUFF :: #string DONE
+test :: () {
+    a: *[3]**[2]#run get_type();
+
+    a: **[3]*[2]*#run -> Type
+    {
+        return A;
+    }
+}
+DONE
+
+weird_stuff :: () -> Test_Parameters
+{
+    using result: Test_Parameters;
+    source_code = WIERD_STUFF;
+    expected_output = #string DONE
+test :: () {
+    a: *[3]**[2]#run get_type();
+
+    a: **[3]*[2]*#run -> Type {
+        return A;
+    }
+}
+DONE;
+
+    return result;
+} @Test
