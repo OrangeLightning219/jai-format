@@ -78,6 +78,9 @@ test :: () {
     b := *c.#insert member;
 
     position = {0,0,0};
+
+    a := My_Cool_Type( 10 ).{};
+    array_add(*array, My_Cool_Type(10).{ });
 }
 DONE
 
@@ -165,6 +168,9 @@ test :: () {
     b := *c.#insert member;
 
     position = .{0, 0, 0};
+
+    a := My_Cool_Type(10).{};
+    array_add(*array, My_Cool_Type(10).{});
 }
 DONE;
 

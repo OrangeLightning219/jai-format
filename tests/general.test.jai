@@ -196,7 +196,7 @@ DONE;
     return result;
 } @Test
 
-WIERD_STUFF :: #string DONE
+WEIRD_STUFF :: #string DONE
 test :: () {
     a: *[3]**[2]#run get_type();
 
@@ -210,7 +210,7 @@ DONE
 weird_stuff :: () -> Test_Parameters
 {
     using result: Test_Parameters;
-    source_code = WIERD_STUFF;
+    source_code = WEIRD_STUFF;
     expected_output = #string DONE
 test :: () {
     a: *[3]**[2]#run get_type();
