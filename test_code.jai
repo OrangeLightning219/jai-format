@@ -1,5 +1,5 @@
 test :: ()
 {
-    a := My_Cool_Type( 10 ).{};
-    array_add(*array, My_Cool_Type(10).{ });
+    #if #run factorial( 5 ) > 100 {}
+    if true #run print("run");
 }

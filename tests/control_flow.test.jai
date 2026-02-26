@@ -193,6 +193,9 @@ test :: () {
 
     if a     b; 
     else c;
+
+    #if #run factorial( 5 ) > 100 {}
+    if true #run print("run");
 }
 DONE
 
@@ -217,6 +220,9 @@ test :: () {
 
     if a b;
     else c;
+
+    #if #run factorial(5) > 100 {}
+    if true #run print("run");
 }
 DONE;
 

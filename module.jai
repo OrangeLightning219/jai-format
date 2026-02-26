@@ -2023,7 +2023,14 @@ print_directive :: ( f: *Jai_Formatter, d: *$T, no_semicolon := false )
 
         print_node( f, d.expression );
 
-        if standalone_expression( d ) && !node_is( d.expression, .BLOCK )
+        is_if_condition: bool;
+        if parent_is( d, .IF )
+        {
+            _if := d.parent.( *If );
+            is_if_condition = _if.condition == d;
+        }
+
+        if standalone_expression( d ) && !node_is( d.expression, .BLOCK ) && !is_if_condition
         {
             semicolon( f );
         }
