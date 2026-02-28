@@ -479,9 +479,12 @@ print_block :: ( f: *Jai_Formatter, b: *Block, is_modify := false )
     clear_alignment( f );
     f.previous_line = f.current_line;
     f.current_line = b.location.l0;
+
     single_line := b.location.l0 == b.location.l1;
     on_new_line: bool;
     parent_is_lambda_or_code := parent_is( b, .QUICK_LAMBDA ) || parent_is( b, .DIRECTIVE_CODE );
+    parent_is_block := parent_is( b, .BLOCK );
+
     if parent_is_lambda_or_code
     {
         on_new_line = f.quick_lambda_brace_on_new_line && b.members.count != 0;
@@ -501,7 +504,7 @@ print_block :: ( f: *Jai_Formatter, b: *Block, is_modify := false )
 
     maybe_print_new_line( f, on_new_line );
     space_already_added := f.previous_print_type == .SPACE;
-    maybe_print_space( f, !space_already_added && ( !f.braces_on_new_line || ( single_line && !on_new_line ) ) );
+    maybe_print_space( f, !parent_is_block && !space_already_added && ( !f.braces_on_new_line || ( single_line && !on_new_line ) ) );
 
     if on_new_line
     {

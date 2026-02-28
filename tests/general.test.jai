@@ -204,6 +204,10 @@ test :: () {
     {
         return A;
     }
+
+    {
+
+    }
 }
 DONE
 
@@ -217,6 +221,9 @@ test :: () {
 
     a: **[3]*[2]*#run -> Type {
         return A;
+    }
+
+    {
     }
 }
 DONE;
