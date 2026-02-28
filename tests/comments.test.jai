@@ -109,7 +109,7 @@ DONE;
 } @Test
 
 COMMENTS_WHITESPACE :: #string DONE
-test :: () {
+test :: () {         // comment 0
     print("asd");    // comment 1
     print("asdzxc"); // comment 2
     print("asd");    // comment 3
@@ -133,7 +133,7 @@ comments_whitespace :: () -> Test_Parameters
     source_code = COMMENTS_WHITESPACE;
     config.keep_whitespace_before_single_line_comments = true;
     expected_output = #string DONE
-test :: () {
+test :: () {         // comment 0
     print("asd");    // comment 1
     print("asdzxc"); // comment 2
     print("asd");    // comment 3
