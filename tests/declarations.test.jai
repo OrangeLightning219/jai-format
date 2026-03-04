@@ -81,6 +81,10 @@ test :: () {
 
     a := My_Cool_Type( 10 ).{};
     array_add(*array, My_Cool_Type(10).{ });
+
+    proc: () -> (quit: bool);
+    proc: (a: int) -> (quit: bool);
+    proc: (a: int) -> (quit: bool) = some_proc;
 }
 DONE
 
@@ -171,6 +175,10 @@ test :: () {
 
     a := My_Cool_Type(10).{};
     array_add(*array, My_Cool_Type(10).{});
+
+    proc: () -> (quit: bool);
+    proc: (a: int) -> (quit: bool);
+    proc: (a: int) -> (quit: bool) = some_proc;
 }
 DONE;
 

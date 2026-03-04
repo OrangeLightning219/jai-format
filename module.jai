@@ -651,7 +651,7 @@ print_declaration :: ( f: *Jai_Formatter, d: *Declaration, compound_type := Comp
     ends_with_block |= node_is( check, .STRUCT );
     ends_with_block |= node_is( check, .ENUM );
     ends_with_block |= node_is( check, .UNION );
-    ends_with_block |= node_is( check, .PROCEDURE );
+    ends_with_block |= node_is( check, .PROCEDURE ) && d.expression;
     ends_with_block |= node_is( check, .DIRECTIVE_STRING );
 
     if !ends_with_block &&
