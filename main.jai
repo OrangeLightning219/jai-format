@@ -63,6 +63,7 @@ main :: ()
             defer reset_formatter( *formatter );
 
             table_add( *results, file, status );
+            if status == .SKIPPED then log_verbose( "Skipping file '%'", file );
             if status != .OK then return;
 
             if cli_args.to_stdout
@@ -102,10 +103,12 @@ main :: ()
 
     failed_count: int;
     success_count: int;
+    skipped_count: int;
     for result, file: results
     {
         if result == .ERROR then failed_count += 1;
         if result == .OK then success_count += 1;
+        if result == .SKIPPED then skipped_count += 1;
     }
 
     log( "========== Summary ==========" );
@@ -133,6 +136,10 @@ main :: ()
             log( "  %", file );
         }
     }
+
+    log_nnl( "Skipped" );
+    with_console_color( .HI_BLUE, log_nnl( " % ", skipped_count ), .BOLD );
+    log( "file%", ifx skipped_count == 1 then "" else "s" );
 }
 
 Logger_Flags :: enum_flags

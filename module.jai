@@ -1,6 +1,7 @@
 #scope_file
 #import "Basic";
 #import "File";
+#import "File_Utilities";
 #import "String";
 #import "Hash_Table";
 #import "Reflection";
@@ -49,6 +50,8 @@ Formatter_Config :: struct
     tab_width := 4;
 
     no_carriage_return_on_windows := false;
+
+    ignored_paths: [ .. ]Formatter_Path;
 }
 
 Indent_Mode :: enum
@@ -181,15 +184,29 @@ Formatter_Status :: enum
     SKIPPED;
 }
 
-format_file :: ( f: *Jai_Formatter, file: string ) -> Formatter_Status, string
+format_file :: ( f: *Jai_Formatter, input_file: string ) -> Formatter_Status, string
 {
     reset_formatter( f );
     push_allocator( get_allocator( *f.pool ) );
 
+    file := replace( input_file, "\\", "/" );
     filename := path_filename( file );
     if !ends_with( filename, ".jai" ) || starts_with( filename, ".added_strings" )
     {
         return .SKIPPED, "";
+    }
+
+    path := parse_path( file,, temp );
+    for ignored: f.ignored_paths
+    {
+        if ignored.is_directory
+        {
+            if starts_with( path, ignored ) then return .SKIPPED, "";
+        }
+        else
+        {
+            if paths_are_equal( ignored, path ) then return .SKIPPED, "";
+        }
     }
 
     log( "Reading file '%'.", file, flags = .VERBOSE_ONLY );
@@ -258,10 +275,23 @@ load_config :: ( file: string ) -> Formatter_Config
             continue;
         }
 
-        if table_contains( *unique_keys, key )
+        if key == "ignore_path"
         {
-            log_error( "Ignoring duplicated option: '%' at line %.", key, handler.line_number );
+            value = replace( value, "\\", "/",, temp );
+            temp_path := parse_path( value,, temp );
+            p: Formatter_Path;
+            p.p = copy_to_permanent( temp_path );
+            p.is_directory = is_directory( value );
+            array_add( *result.ignored_paths, p );
             continue;
+        }
+        else
+        {
+            if table_contains( *unique_keys, key )
+            {
+                log_error( "Ignoring duplicated option: '%' at line %.", key, handler.line_number );
+                continue;
+            }
         }
 
         table_add( *unique_keys, key, true );
@@ -2500,7 +2530,6 @@ insert_new_lines :: ( f: *Jai_Formatter, node: *Node ) -> int
     lines_added := 0;
     node_line := node.location.l0;
     node_end_line := node.location.l1;
-    log( "node line: %, current: %", node_line, f.current_line );
     if node_line > f.current_line
     {
         if f.current_line >= 0
@@ -3036,4 +3065,36 @@ pop :: ( stack: *Stack ) -> stack.type
 get_allocator :: inline ( pool: *Flat_Pool ) -> Allocator
 {
     return .{ flat_pool_allocator_proc, pool };
+}
+
+Formatter_Path :: struct
+{
+    #as using p: Path;
+    is_directory: bool;
+}
+
+paths_are_equal :: ( a: Path, b: Path ) -> bool
+{
+    if a.header_string != b.header_string then return false;
+    if a.words.count != b.words.count then return false;
+
+    for a.words
+    {
+        if it != b.words[ it_index ] then return false;
+    }
+
+    return true;
+}
+
+starts_with :: ( path: Path, prefix: Path ) -> bool
+{
+    if path.header_string != prefix.header_string then return false;
+    if path.words.count < prefix.words.count then return false;
+
+    for prefix.words
+    {
+        if path.words[ it_index ] != it then return false;
+    }
+
+    return true;
 }

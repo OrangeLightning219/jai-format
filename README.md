@@ -143,8 +143,8 @@ For example:
     Specifies wheter to place the ending bracket of a multiline struct literal on a new line.
 ```
     true:                                false:
-        a := Struct.{1, 2,                      a := Struct.{1, 2, 
-            3, 4                                 3, 4};
+        a := Struct.{1, 2,                   a := Struct.{1, 2, 
+            3, 4                              3, 4};
         };
 ```
 
@@ -297,6 +297,14 @@ tab  spaces
 
 - no_carriage_return_on_windows: default = false\
     If true only `\n` will be used as a line ending instead of `\r\n` on windows.
+
+- ignore_path:  default = empty\
+    Specifies a path to a file or directory that should be ignored when formatting. The path can be either absolute or relative to the current working directory.\
+    You can specify multiple paths to ignore by just duplicating this option like this:
+```
+ignore_path  C:/directory/path
+ignore_path  ./specific/file.jai
+```
 
 
 To change the configuration create a `.jai-format` file in the working directory of the formatter and put your options there. 
