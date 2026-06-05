@@ -279,6 +279,14 @@ For example:
         a := cast(u16) 5;               a := cast(u16)5;
 ```
 
+- space_after_for_reverse: default = false\
+    If true a space will be added after the `<` for modifier
+    For example:
+```
+    true:                           false:
+        for < items {}                  for <items {}
+```
+
 - indent_mode : default = SPACES\
     What character to use for indentation. Either `SPACES` or `TABS`.
 

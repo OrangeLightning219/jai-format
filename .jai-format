@@ -3,6 +3,7 @@ spaces_inside_brackets                      true
 spaces_inside_literals                      true
 spaces_around_operators                     true
 space_after_cast                            true
+space_after_for_reverse                     false
 
 braces_on_new_line                          true
 quick_lambda_brace_on_new_line              false

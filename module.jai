@@ -44,6 +44,7 @@ Formatter_Config :: struct
     max_empty_lines_to_keep := 1;
 
     space_after_cast := false;
+    space_after_for_reverse := false;
 
     indent_mode := Indent_Mode.SPACES;
     indent_width := 4;
@@ -1521,6 +1522,7 @@ print_for :: ( f: *Jai_Formatter, _for: *For )
     if _for.reversed
     {
         print( f, "<" );
+        maybe_print_space( f, f.space_after_for_reverse );
     }
 
     if _for.by_pointer

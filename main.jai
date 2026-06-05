@@ -126,20 +126,26 @@ main :: ()
         }
     }
 
-    log_nnl( "Succesfully formatted" );
-    with_console_color( .HI_GREEN, log_nnl( " % ", success_count ), .BOLD );
-    log( "file%", ifx success_count == 1 then "" else "s" );
-    for result, file: results
+    if success_count > 0
     {
-        if result == .OK
+        log_nnl( "Succesfully formatted" );
+        with_console_color( .HI_GREEN, log_nnl( " % ", success_count ), .BOLD );
+        log( "file%", ifx success_count == 1 then "" else "s" );
+        for result, file: results
         {
-            log( "  %", file );
+            if result == .OK
+            {
+                log( "  %", file );
+            }
         }
     }
 
-    log_nnl( "Skipped" );
-    with_console_color( .HI_BLUE, log_nnl( " % ", skipped_count ), .BOLD );
-    log( "file%", ifx skipped_count == 1 then "" else "s" );
+    if skipped_count > 0
+    {
+        log_nnl( "Skipped" );
+        with_console_color( .HI_BLUE, log_nnl( " % ", skipped_count ), .BOLD );
+        log( "file%", ifx skipped_count == 1 then "" else "s" );
+    }
 }
 
 Logger_Flags :: enum_flags
