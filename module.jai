@@ -27,6 +27,8 @@ Formatter_Config :: struct
     brackets_alignment_mode := Alignment_Mode.NOT_SET;
     struct_literal_alignment_mode := Alignment_Mode.NOT_SET;
     struct_literal_dot_mode := Struct_Literal_Dot_Mode.FORCE;
+    multiline_array_literal_end_on_new_line := false;
+    multiline_struct_literal_end_on_new_line := false;
 
     single_statement_brace_mode := Single_Statement_Brace_Mode.DONT_MODIFY;
     single_statement_line_mode := Single_Statement_Line_Mode.DONT_MODIFY;
@@ -83,6 +85,12 @@ Alignment_Mode :: enum
     EXACT;
 }
 
+Alignment_Entry :: struct
+{
+    mode: Alignment_Mode;
+    amount: int;
+}
+
 Jai_Formatter :: struct( Parser_Visit_Type: Type = Node_Visit_Data )
 {
     pool: Flat_Pool;
@@ -94,7 +102,9 @@ Jai_Formatter :: struct( Parser_Visit_Type: Type = Node_Visit_Data )
 
     current_collumn: int;
     current_alignment: int;
-    alignments: [ .. ]int;
+    alignments: [ .. ]Alignment_Entry;
+    last_indent_only_alignment_line: int = -1;
+
     previous_print_type: enum { STRING; NEW_LINE; TAB; INDENT; SPACE; SEMICOLON; }
     new_scope_started: bool;
 
@@ -124,8 +134,8 @@ Jai_Formatter :: struct( Parser_Visit_Type: Type = Node_Visit_Data )
     }
 }
 
-FORMATTER_ENABLE_PROFILING :: true;
-// FORMATTER_ENABLE_PROFILING :: false;
+// FORMATTER_ENABLE_PROFILING :: true;
+FORMATTER_ENABLE_PROFILING :: false;
 
 make_formatter :: ( config: Formatter_Config ) -> Jai_Formatter( Node_Visit_Data )
 {
@@ -139,6 +149,14 @@ make_formatter :: ( config: Formatter_Config ) -> Jai_Formatter( Node_Visit_Data
     f.max_buffer_size = 1024 * 1024;
     f.buffer = NewArray( f.max_buffer_size, u8 );
     f.buffer.count = 0;
+
+    // NOTE: This is here instead of in load_config so that tests have a properly initialized config.
+    m := f.alignment_mode;
+    if f.declaration_alignment_mode == .NOT_SET then f.declaration_alignment_mode = m;
+    if f.expression_alignment_mode == .NOT_SET then f.expression_alignment_mode = m;
+    if f.parens_alignment_mode == .NOT_SET then f.parens_alignment_mode = m;
+    if f.brackets_alignment_mode == .NOT_SET then f.brackets_alignment_mode = m;
+    if f.struct_literal_alignment_mode == .NOT_SET then f.struct_literal_alignment_mode = m;
 
     return f;
 }
@@ -1060,7 +1078,18 @@ print_literal :: ( f: *Jai_Formatter, l: *Literal )
         }
 
         is_empty := array_info.elements.count == 0;
-        print( f, ".[" );
+        print( f, "." );
+
+        multiline := l.location.l0 != l.location.l1;
+        multiline_new_line := multiline && f.multiline_array_literal_end_on_new_line;
+        // NOTE: If the alignment mode is exact and we want the ending bracket to be on a new line we split the alignment so that we can align the ending bracket to the opening one.
+        align_end := f.brackets_alignment_mode == .EXACT && multiline_new_line;
+        if align_end
+        {
+            push_alignment( f, f.brackets_alignment_mode );
+        }
+
+        print( f, "[" );
         maybe_print_space( f, f.spaces_inside_literals && !is_empty );
 
         push_alignment( f, f.brackets_alignment_mode );
@@ -1071,7 +1100,14 @@ print_literal :: ( f: *Jai_Formatter, l: *Literal )
         }
         pop_alignment( f );
 
-        maybe_print_space( f, f.spaces_inside_literals && !is_empty );
+        maybe_print_new_line( f, multiline_new_line, true );
+
+        if align_end
+        {
+            pop_alignment( f );
+        }
+
+        maybe_print_space( f, f.spaces_inside_literals && !is_empty && !multiline_new_line );
         print( f, "]" );
     case .STRUCT;
         struct_info := l.struct_literal_info;
@@ -1083,20 +1119,34 @@ print_literal :: ( f: *Jai_Formatter, l: *Literal )
 
         is_empty := struct_info.body.count == 0;
 
+        multiline := l.location.l0 != l.location.l1;
+        multiline_new_line := multiline && f.multiline_struct_literal_end_on_new_line && !f.inside_arguments;
+        // NOTE: Same thing as with array literals
+        align_end := f.struct_literal_alignment_mode == .EXACT && multiline_new_line;
+
         if !struct_info.type
         {
-            if f.struct_literal_dot_mode ==
+            if f.struct_literal_dot_mode == .FORCE
             {
-            case .FORCE;
-                print( f, ".{" );
-            case .REMOVE;
-                print( f, "{" );
+                print( f, "." );
             }
+
+            if align_end
+            {
+                push_alignment( f, f.struct_literal_alignment_mode );
+            }
+            print( f, "{" );
         }
         else
         {
-            print( f, ".{" );
+            print( f, "." );
+            if align_end
+            {
+                push_alignment( f, f.struct_literal_alignment_mode );
+            }
+            print( f, "{" );
         }
+
         maybe_print_space( f, f.spaces_inside_literals && !is_empty );
 
         push_alignment( f, f.struct_literal_alignment_mode );
@@ -1107,8 +1157,17 @@ print_literal :: ( f: *Jai_Formatter, l: *Literal )
         }
         pop_alignment( f );
 
-        maybe_print_space( f, f.spaces_inside_literals && !is_empty );
+        maybe_print_new_line( f, multiline_new_line, true );
+
+        if align_end
+        {
+            pop_alignment( f );
+        }
+
+        maybe_print_space( f, f.spaces_inside_literals && !is_empty && !multiline_new_line );
         print( f, "}" );
+
+        f.current_line = l.location.l1;
     }
 
     if parent_is( l, .BLOCK ) then semicolon( f );
@@ -2441,6 +2500,7 @@ insert_new_lines :: ( f: *Jai_Formatter, node: *Node ) -> int
     lines_added := 0;
     node_line := node.location.l0;
     node_end_line := node.location.l1;
+    log( "node line: %, current: %", node_line, f.current_line );
     if node_line > f.current_line
     {
         if f.current_line >= 0
@@ -2776,13 +2836,21 @@ push_alignment :: ( f: *Jai_Formatter, mode: Alignment_Mode = .NOT_SET )
     case .DISABLED;
         return;
     case .INDENT_ONLY;
-        amount = f.indent_width;
+        if f.last_indent_only_alignment_line != f.current_line
+        {
+            amount = f.indent_width;
+            f.last_indent_only_alignment_line = f.current_line;
+        }
+        else
+        {
+            amount = 0;
+        }
     case .EXACT;
         amount = f.current_collumn - f.indent_level * f.indent_string.count - f.current_alignment;
     }
 
     assert( amount >= 0 );
-    array_add( *f.alignments, amount );
+    array_add( *f.alignments, .{ m, amount } );
     f.current_alignment += amount;
 }
 
@@ -2791,8 +2859,13 @@ pop_alignment :: ( f: *Jai_Formatter )
     if f.alignments.count > 0
     {
         last_alignment := pop( *f.alignments );
-        f.current_alignment -= last_alignment;
+        f.current_alignment -= last_alignment.amount;
         assert( f.current_alignment >= 0 );
+
+        if last_alignment.mode == .INDENT_ONLY && last_alignment.amount == 0 && !f.inside_arguments
+        {
+            pop_alignment( f );
+        }
     }
     // NOTE: This error message isn't really usefull because after calling clear_alignment any pop_alignment call will be mismatched
     // else
@@ -2809,6 +2882,7 @@ clear_alignment :: ( f: *Jai_Formatter )
 
 indent :: ( f: *Jai_Formatter )
 {
+    assert( f.indent_level >= 0 );
     for 0..f.indent_level - 1
     {
         print( f, f.indent_string );

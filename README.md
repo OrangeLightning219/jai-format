@@ -130,6 +130,24 @@ For example:
         a := make_struct(.{1, 2, 3});         a := make_struct({1, 2, 3});
 ```
 
+- multiline_array_literal_end_on_new_line: default = false\
+    Specifies wheter to place the ending bracket of a multiline array literal on a new line.
+```
+    true:                                false:
+        a := int.[1, 2,                      a := int.[1, 2, 
+            3, 4                                 3, 4];
+        ];
+```
+
+- multiline_struct_literal_end_on_new_line: default = false\
+    Specifies wheter to place the ending bracket of a multiline struct literal on a new line.
+```
+    true:                                false:
+        a := Struct.{1, 2,                      a := Struct.{1, 2, 
+            3, 4                                 3, 4};
+        };
+```
+
 - single_statement_brace_mode: default = DONT_MODIFY\
     Specifies wheter to keep, add or remove braces to single statements in control flow expressions (`if`, `for`, `while`).
     

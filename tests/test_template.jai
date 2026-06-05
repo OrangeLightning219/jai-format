@@ -97,6 +97,13 @@ print_output_diff :: ( output: string, expected_output: string )
         }
         print( "^\n" );
     }
+
+    print("Full output:\n");
+    for output_lines
+    {
+        marker := ifx it_index == diff_line then ">>" else "  ";
+        print("%%\n", marker, it);
+    }
 }
 
 print_config_diff :: ( config: Formatter_Config )
