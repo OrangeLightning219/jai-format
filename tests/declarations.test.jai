@@ -85,6 +85,8 @@ test :: () {
     proc: () -> (quit: bool);
     proc: (a: int) -> (quit: bool);
     proc: (a: int) -> (quit: bool) = some_proc;
+
+    pos := .{ a, b } + Vector2.{ c, d };
 }
 DONE
 
@@ -179,6 +181,8 @@ test :: () {
     proc: () -> (quit: bool);
     proc: (a: int) -> (quit: bool);
     proc: (a: int) -> (quit: bool) = some_proc;
+
+    pos := .{a, b} + Vector2.{c, d};
 }
 DONE;
 

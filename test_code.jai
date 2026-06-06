@@ -1,7 +1,4 @@
 test :: ()
 {
-    for <*items
-    {
-        test();
-    }
+    pos := .{ a, b } + Vector2.{ c, d };
 }

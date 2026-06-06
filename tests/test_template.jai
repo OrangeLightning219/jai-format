@@ -20,8 +20,8 @@ test_formatting :: ( params: Test_Parameters ) -> bool
     config := params.config;
     // NOTE: Here strings only use \n as line endings. To use \r\n we would need to specify the ,cr modifier on #string. We don't want that to make sure that the tests can be run on any system.
     config.no_carriage_return_on_windows = true;
-    formatter := make_formatter(config);
-    defer deinit_formatter(*formatter);
+    formatter := make_formatter( config );
+    defer deinit_formatter( *formatter );
     status, output := format_from_string( *formatter, params.source_code );
 
     if status != params.expected_result
@@ -98,39 +98,12 @@ print_output_diff :: ( output: string, expected_output: string )
         print( "^\n" );
     }
 
-    print("Full output:\n");
+    print( "Full output:\n" );
     for output_lines
     {
         marker := ifx it_index == diff_line then ">>" else "  ";
-        print("%%\n", marker, it);
+        print( "%%\n", marker, it );
     }
-}
-
-print_config_diff :: ( config: Formatter_Config )
-{
-    default_config: Formatter_Config;
-    diff_found: int;
-    print( "{" );
-    #insert -> string
-    {
-        builder: String_Builder;
-        ti := type_info( Formatter_Config );
-        for ti.members
-        {
-            print( *builder, #string,\% DONE
-            if config.%1 != default_config.%1 
-            { 
-                print("\% = \%;", "%1", config.%1); 
-                diff_found += 1;
-            }
-            DONE,
-
-                   it.name );
-            print( *builder, "if diff_found > 1 print(\"\\n\");" );
-        }
-        return builder_to_string( *builder );
-    }
-    print( "}" );
 }
 
 silent_logger :: ( message: string, data: *void, info: Log_Info ) {}
