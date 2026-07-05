@@ -1,4 +1,13 @@
-test :: ()
+System_Notification :: union tag: Type
 {
-    pos := .{ a, b } + Vector2.{ c, d };
+    System_Call_Result ,, system_call_result: System_Call_Result;
+    .Quit_Notification ,, quit_notification: Quit_Notification;
+
+    test :: struct
+    {
+        a: int;
+    }
+
+    1 ,, a: int;
+    "asd" ,, b: float;
 }

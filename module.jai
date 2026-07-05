@@ -474,6 +474,7 @@ print_node :: ( f: *Jai_Formatter, node: *Node, no_semicolon := false )
     case .STRUCT; print_struct( f, xx node );
     case .ENUM; print_enum( f, xx node );
     case .UNION; print_union( f, xx node );
+    case .TAGGED_UNION_BINDING; print_tagged_union_binding( f, xx node );
 
     case .CAST; print_cast( f, xx node );
     case .USING; print_using( f, xx node );
@@ -1882,6 +1883,15 @@ print_union :: ( f: *Jai_Formatter, u: *Union )
             print_node( f, it );
         }
     }
+}
+
+print_tagged_union_binding :: ( f: *Jai_Formatter, b: *Tagged_Union_Binding )
+{
+    print_node( f, b.tag );
+    maybe_print_space( f, f.spaces_around_operators );
+    print( f, ",," );
+    maybe_print_space( f, f.spaces_around_operators );
+    print_node( f, b.member );
 }
 
 print_cast :: ( f: *Jai_Formatter, c: *Cast )

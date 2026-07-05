@@ -269,6 +269,19 @@ Test_Union :: union @TestNote tag: enum @Note {
     b: float;
     c: string;
 } @Note
+
+Test_Tagged_Union :: union tag: Type {
+    Type_A   ,, a: int;
+    Type_B ,, b: float;
+
+    test :: struct {
+        a: int;
+        b: float;
+    }
+
+    1 ,,     c: string;
+    "d" ,, d: string;
+}
 DONE
 
 struct_union_enum :: () -> Test_Parameters
@@ -307,6 +320,19 @@ Test_Union :: union @TestNote tag: enum @Note {
     b: float;
     c: string;
 } @Note
+
+Test_Tagged_Union :: union tag: Type {
+    Type_A ,, a: int;
+    Type_B ,, b: float;
+
+    test :: struct {
+        a: int;
+        b: float;
+    }
+
+    1 ,, c: string;
+    "d" ,, d: string;
+}
 DONE;
 
     return result;
