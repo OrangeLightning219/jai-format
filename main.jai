@@ -12,6 +12,7 @@ CLI_Arguments :: struct
 {
     verbose: bool; @"?If set more output information will be printed."
     silent: bool; @"?If set no output will be printed other than the final result if -to_stdout is also set."
+    from_stdin: bool; @"If set the input text to be formatted will be read from stdin instead of command line arguments. Usefull when integrating the formatter with text editors."
     to_stdout: bool; @"?If set the formatted output will be printed to standard out."
     to_file: bool; @"?If set the source file will be overwritten with the new formatted output."
     config_file := "./.jai-format"; @"?Path to a config file that should be used. If not set the formatter will search the current working directory for a .jai-format file. If no config is found the default config will be used."
@@ -54,50 +55,84 @@ main :: ()
 
     formatter := make_formatter( global_config );
 
-    results: Table( string, Formatter_Status );
-    for free_arguments
+    format :: ( file: string ) #expand
     {
-        format :: ( file: string ) #expand
-        {
-            status, output := format_file( *formatter, file );
-            defer reset_formatter( *formatter );
+        status, output := format_file( *formatter, file );
+        defer reset_formatter( *formatter );
 
+        table_add( *results, file, status );
+        if status == .SKIPPED then log_verbose( "Skipping file '%'", file );
+        if status != .OK then return;
+
+        if cli_args.to_stdout
+        {
+            print( "%\n", output );
+        }
+
+        if cli_args.to_file
+        {
+            #if FORMATTER_ENABLE_PROFILING { write_start := seconds_since_init(); }
+            ok := write_entire_file( file, output );
+            if !ok
+            {
+                log_error( "Failed to write formatted code to file: '%'.", file );
+            }
+            #if FORMATTER_ENABLE_PROFILING
+            {
+                write_time := seconds_since_init() - write_start;
+                log_verbose( "Writing time: %\n", write_time );
+            }
+        }
+    }
+
+    results: Table( string, Formatter_Status );
+
+    if cli_args.from_stdin
+    {
+        file := "";
+        if free_arguments.count > 0 then file = free_arguments[ 0 ];
+        file = replace( file, "\\", "/" );
+
+        if !should_skip_file( *formatter, file )
+        {
+            max_bytes_to_read := 1024 * 1024;
+            if file
+            {
+                _, file_size, ok := file_modtime_and_size( file );
+                if ok then max_bytes_to_read = file_size;
+            }
+
+            input := read_stdin( max_bytes_to_read );
+            defer free( input.data );
+
+            status, output := format_from_string( *formatter, input, file );
             table_add( *results, file, status );
-            if status == .SKIPPED then log_verbose( "Skipping file '%'", file );
-            if status != .OK then return;
-
-            if cli_args.to_stdout
+            if status == .OK
             {
-                print( "%\n", output );
+                print( "%", output );
             }
-
-            if cli_args.to_file
+            else
             {
-                #if FORMATTER_ENABLE_PROFILING { write_start := seconds_since_init(); }
-                ok := write_entire_file( file, output );
-                if !ok
-                {
-                    log_error( "Failed to write formatted code to file: '%'.", file );
-                }
-                #if FORMATTER_ENABLE_PROFILING
-                {
-                    write_time := seconds_since_init() - write_start;
-                    log_verbose( "Writing time: %\n", write_time );
-                }
+                print( "%", input );
             }
         }
-
-        if is_directory( it )
+    }
+    else
+    {
+        for free_arguments
         {
-            files := file_list( it, cli_args.recursive );
-            for file: files
+            if is_directory( it )
             {
-                format( file );
+                files := file_list( it, cli_args.recursive );
+                for file: files
+                {
+                    format( file );
+                }
             }
-        }
-        else
-        {
-            format( it );
+            else
+            {
+                format( it );
+            }
         }
     }
 
@@ -205,12 +240,20 @@ custom_logger :: ( message: string, data: *void, info: Log_Info )
     }
 }
 
+#if OS == .WINDOWS
+{
+    #import "Windows";
+}
+else if OS == .LINUX || OS == .MACOS
+{
+    #import "POSIX";
+}
+
 // use `with_console_color` only when stdout is tty
 is_tty :: () -> bool
 {
     #if OS == .WINDOWS
     {
-        #import "Windows";
         fd := GetStdHandle( STD_OUTPUT_HANDLE );
         mode: DWORD;
         result := GetConsoleMode( fd, *mode );
@@ -218,7 +261,6 @@ is_tty :: () -> bool
     }
     else if OS == .LINUX || OS == .MACOS
     {
-        #import "POSIX";
         return isatty( 1 ) != 0;
     }
     else
@@ -237,4 +279,48 @@ with_console_color :: ( color: Ansi.Console_Color, code: Code, style: Ansi.Conso
     {
         #insert code;
     }
+}
+
+read_stdin :: ( max_bytes_to_read: int ) -> string
+{
+    result: string;
+    result.data = alloc( max_bytes_to_read );
+
+    #if OS == .WINDOWS
+    {
+        stdin := GetStdHandle( STD_INPUT_HANDLE );
+    }
+    else
+    {
+        stdin := STDIN_FILENO;
+    }
+
+    ok, bytes_read := file_read( .{ stdin }, result.data, max_bytes_to_read );
+
+    #if OS == .WINDOWS
+    {
+        if !ok
+        {
+            BROKEN_PIPE_ERROR :: 109;
+            err := GetLastError();
+            if err != BROKEN_PIPE_ERROR
+            {
+                log_error( "Failed to read stdin. bytes_read: %, error: %", bytes_read, err );
+                return "";
+            }
+        }
+    }
+    else #if OS == .LINUX || OS == .MACOS
+    {
+        // TODO: Check if linux version works
+        if !ok
+        {
+            log_error( "Failed to read stdin." );
+            return "";
+        }
+    }
+
+    result.count = bytes_read;
+
+    return result;
 }

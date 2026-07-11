@@ -23,6 +23,9 @@ There are some CLI parameters you can use to alter the default behaviour:
 - `-to_stdout`: default = false\
     If set the formatted output will be printed to standard out.
 
+- `-from_stdin`: default = false\
+    If set the input text to be formatted will be read from stdin instead of command line arguments. Usefull when integrating the formatter with text editors.
+
 - `-verbose`: default = false\
     If set more output information will be printed.
 
@@ -335,14 +338,14 @@ Add this to your conform setup:
 local conform_util = require("conform.util")
 require("conform").setup({ 
     formatters_by_ft = { 
-        jai   = { "jai-format" }, 
+        jai = { "jai-format" }, 
     },
     formatters = {
         ["jai-format"] = {
             command = "jai-format",
-            args = { "-silent", "-to_file", "$FILENAME" },
+            args = { "-silent", "-to_stdout", "-from_stdin", "$RELATIVE_FILEPATH" },
             cwd = conform_util.root_file({ ".jai-format" }),
-            stdin = false,
+            stdin = true,
         },
     }
 })

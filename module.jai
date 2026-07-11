@@ -185,6 +185,24 @@ Formatter_Status :: enum
     SKIPPED;
 }
 
+should_skip_file :: ( f: *Jai_Formatter, file: string ) -> bool
+{
+    path := parse_path( file,, temp );
+    for ignored: f.ignored_paths
+    {
+        if ignored.is_directory
+        {
+            if starts_with( path, ignored ) then return true;
+        }
+        else
+        {
+            if paths_are_equal( ignored, path ) then return true;
+        }
+    }
+
+    return false;
+}
+
 format_file :: ( f: *Jai_Formatter, input_file: string ) -> Formatter_Status, string
 {
     reset_formatter( f );
@@ -197,18 +215,7 @@ format_file :: ( f: *Jai_Formatter, input_file: string ) -> Formatter_Status, st
         return .SKIPPED, "";
     }
 
-    path := parse_path( file,, temp );
-    for ignored: f.ignored_paths
-    {
-        if ignored.is_directory
-        {
-            if starts_with( path, ignored ) then return .SKIPPED, "";
-        }
-        else
-        {
-            if paths_are_equal( ignored, path ) then return .SKIPPED, "";
-        }
-    }
+    if should_skip_file( f, input_file ) then return .SKIPPED, "";
 
     log( "Reading file '%'.", file, flags = .VERBOSE_ONLY );
     source_code, ok := read_entire_file( file );

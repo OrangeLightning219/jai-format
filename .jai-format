@@ -37,3 +37,4 @@ multiline_array_literal_end_on_new_line     false
 multiline_struct_literal_end_on_new_line    false 
 
 ignore_path   modules
+# ignore_path   test_code.jai
