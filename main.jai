@@ -245,7 +245,7 @@ custom_logger :: ( message: string, data: *void, info: Log_Info )
 {
     #import "Windows";
 }
-else if OS == .LINUX || OS == .MACOS
+else #if OS == .LINUX || OS == .MACOS
 {
     #import "POSIX";
 }
@@ -260,7 +260,7 @@ is_tty :: () -> bool
         result := GetConsoleMode( fd, *mode );
         return result != 0;
     }
-    else if OS == .LINUX || OS == .MACOS
+    else #if OS == .LINUX || OS == .MACOS
     {
         return isatty( 1 ) != 0;
     }
@@ -289,21 +289,22 @@ read_stdin :: ( max_bytes_to_read: int ) -> string
 
     #if OS == .WINDOWS
     {
-        stdin := GetStdHandle( STD_INPUT_HANDLE );
+        stdin_handle := GetStdHandle( STD_INPUT_HANDLE );
     }
     else
     {
-        stdin := STDIN_FILENO;
+        stdin_handle := stdin;
     }
 
     to_read := max_bytes_to_read;
     ok := true;
     total_read: int;
 
-    while ok
+    while ok && to_read > 0
     {
+        requested_bytes := to_read;
         bytes_read: int;
-        ok, bytes_read = file_read( .{ stdin }, result.data + total_read, to_read );
+        ok, bytes_read = file_read( .{ stdin_handle }, result.data + total_read, to_read );
         total_read += bytes_read;
         to_read -= bytes_read;
 
@@ -336,6 +337,8 @@ read_stdin :: ( max_bytes_to_read: int ) -> string
                 return "";
             }
         }
+
+        if bytes_read < requested_bytes then break;
     }
 
     result.count = total_read;

@@ -192,7 +192,8 @@ test :: () {
     proc_arg((a: int) {
         b := test();
         c, d := test1();
-    });
+    },
+    );
 }
 DONE;
 

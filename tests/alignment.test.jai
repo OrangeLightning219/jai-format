@@ -62,7 +62,8 @@ test :: () {
 
     a := Struct.{1, 2,
     3, test(a,
-    b, c), 4,
+    b, c,
+    ), 4,
     5};
 
     a := int.[1, 2,
@@ -71,7 +72,8 @@ test :: () {
 
     test(a, Struct.{1, 2,
     3, 4}, b, c,
-    d, e);
+    d, e,
+    );
 }
 DONE;
 
@@ -105,7 +107,8 @@ test :: () {
 
     a := Struct.{1, 2,
         3, test(a,
-            b, c), 4,
+            b, c,
+        ), 4,
         5};
 
     a := int.[1, 2,
@@ -114,7 +117,8 @@ test :: () {
 
     test(a, Struct.{1, 2,
         3, 4}, b, c,
-        d, e);
+        d, e,
+    );
 }
 DONE;
 
@@ -148,7 +152,8 @@ test :: () {
 
     a := Struct.{1, 2,
                  3, test(a,
-                         b, c), 4,
+                         b, c,
+                 ), 4,
                  5};
 
     a := int.[1, 2,
@@ -157,7 +162,8 @@ test :: () {
 
     test(a, Struct.{1, 2,
                     3, 4}, b, c,
-         d, e);
+         d, e,
+    );
 }
 DONE;
 

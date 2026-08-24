@@ -10,6 +10,8 @@ Test_Parameters :: struct
     source_code: string;
     expected_output: string;
     expected_result := Formatter_Status.OK;
+    reuse_source_codes: []string;
+    reuse_iterations := 1;
 }
 
 test_formatting :: ( params: Test_Parameters ) -> bool
@@ -20,8 +22,15 @@ test_formatting :: ( params: Test_Parameters ) -> bool
     config := params.config;
     // NOTE: Here strings only use \n as line endings. To use \r\n we would need to specify the ,cr modifier on #string. We don't want that to make sure that the tests can be run on any system.
     config.no_carriage_return_on_windows = true;
+
+    if params.reuse_source_codes
+    {
+        return test_formatter_reuse( config, params.reuse_source_codes, params.reuse_iterations );
+    }
+
     formatter := make_formatter( config );
     defer deinit_formatter( *formatter );
+
     status, output := format_from_string( *formatter, params.source_code );
 
     if status != params.expected_result
@@ -36,6 +45,46 @@ test_formatting :: ( params: Test_Parameters ) -> bool
         print_color( " [FAILED] - output doesn't match expected output.\n", color = .HI_RED );
         print_output_diff( output, expected_output );
         return false;
+    }
+
+    print_color( " [PASSED]\n", color = .HI_GREEN );
+    return true;
+}
+
+test_formatter_reuse :: ( config: Formatter_Config, source_codes: []string, iterations: int ) -> bool
+{
+    reused := make_formatter( config );
+    defer deinit_formatter( *reused );
+
+    for 1..iterations
+    {
+        iteration := it;
+        for source_code: source_codes
+        {
+            reused_status, reused_output := format_from_string( *reused, source_code );
+
+            fresh := make_formatter( config );
+            fresh_status, fresh_output := format_from_string( *fresh, source_code );
+
+            if reused_status != fresh_status
+            {
+                print_color( " [FAILED] - reused formatter returned '%' but a fresh formatter returned '%' at iteration %, source %.\n",
+                             reused_status, fresh_status, iteration, it_index + 1, color = .HI_RED );
+                deinit_formatter( *fresh );
+                return false;
+            }
+
+            if reused_output != fresh_output
+            {
+                print_color( " [FAILED] - reused formatter output differs at iteration %, source %.\n",
+                             iteration, it_index + 1, color = .HI_RED );
+                print_output_diff( reused_output, fresh_output );
+                deinit_formatter( *fresh );
+                return false;
+            }
+
+            deinit_formatter( *fresh );
+        }
     }
 
     print_color( " [PASSED]\n", color = .HI_GREEN );

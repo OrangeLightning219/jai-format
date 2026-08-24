@@ -35,6 +35,7 @@ alignment_mode                              EXACT
 
 multiline_array_literal_end_on_new_line     false 
 multiline_struct_literal_end_on_new_line    false 
+procedure_call_trailing_comma_mode          MULTILINE
 
 ignore_path   modules
 ignore_path   E:/Tools/jai

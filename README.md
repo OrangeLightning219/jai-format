@@ -151,6 +151,21 @@ For example:
         };
 ```
 
+- procedure_call_trailing_comma_mode: default = MULTILINE\
+    Specifies whether to add a trailing comma in procedure calls.
+
+    Allowed values are:
+    - `NEVER` - remove the trailing comma.
+    - `ALWAYS` - add the trailing comma to every nonempty call.
+    - `MULTILINE` - add the trailing comma only when the formatted call contains a line break.
+
+```
+    NEVER:             ALWAYS:              MULTILINE:
+        call(value);       call(value,);       call(
+                                                   value,
+                                               );
+```
+
 - single_statement_brace_mode: default = DONT_MODIFY\
     Specifies wheter to keep, add or remove braces to single statements in control flow expressions (`if`, `for`, `while`).
     

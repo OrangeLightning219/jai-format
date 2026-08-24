@@ -30,6 +30,7 @@ Formatter_Config :: struct
     struct_literal_dot_mode := Struct_Literal_Dot_Mode.FORCE;
     multiline_array_literal_end_on_new_line := false;
     multiline_struct_literal_end_on_new_line := false;
+    procedure_call_trailing_comma_mode := Procedure_Call_Trailing_Comma_Mode.MULTILINE;
 
     single_statement_brace_mode := Single_Statement_Brace_Mode.DONT_MODIFY;
     single_statement_line_mode := Single_Statement_Line_Mode.DONT_MODIFY;
@@ -79,6 +80,13 @@ Struct_Literal_Dot_Mode :: enum
 {
     FORCE;
     REMOVE;
+}
+
+Procedure_Call_Trailing_Comma_Mode :: enum
+{
+    NEVER;
+    ALWAYS;
+    MULTILINE;
 }
 
 Alignment_Mode :: enum
@@ -168,7 +176,24 @@ make_formatter :: ( config: Formatter_Config ) -> Jai_Formatter( Node_Visit_Data
 reset_formatter :: ( f: *Jai_Formatter )
 {
     reset( *f.pool );
-    f.buffer.count = 0;
+
+    pool := f.pool;
+    buffer_allocator := f.buffer_allocator;
+    buffer := f.buffer;
+    buffer.count = 0;
+    max_buffer_size := f.max_buffer_size;
+    indent_string := f.indent_string;
+    config := f.config;
+
+    f.* = .{};
+    f.pool = pool;
+    f.buffer_allocator = buffer_allocator;
+    f.buffer = buffer;
+    f.max_buffer_size = max_buffer_size;
+    f.indent_string = indent_string;
+    f.config = config;
+    f.current_line = -1;
+    f.last_indent_only_alignment_line = -1;
 }
 
 deinit_formatter :: ( f: *Jai_Formatter )
@@ -949,9 +974,25 @@ print_procedure_call :: ( f: *Jai_Formatter, p: *Procedure_Call, no_semicolon :=
         }
     }
 
+    multiline := p.location.l0 != p.location.l1;
+    has_arguments := !empty_args;
+    trailing_comma := has_arguments &&
+                      ( f.procedure_call_trailing_comma_mode == .ALWAYS ||
+                        ( f.procedure_call_trailing_comma_mode == .MULTILINE && multiline ) );
+    if trailing_comma then print( f, "," );
+
     end_arguments( f );
 
-    close_paren( f, !empty_args );
+    if multiline
+    {
+        pop_alignment( f );
+        maybe_print_new_line( f, true, should_indent = true );
+        print( f, ")" );
+    }
+    else
+    {
+        close_paren( f, !empty_args );
+    }
 
     if standalone_expression( p ) && !no_semicolon
     {
@@ -2064,6 +2105,9 @@ print_directive :: ( f: *Jai_Formatter, d: *$T, no_semicolon := false )
         // NOTE: strings can have % in them so this "%" makes sure that the actual string value is passed to print as one of the var args and not as the format string.
         print( f, "%", d.string_value );
         print( f, "%", d.identifier );
+        f.previous_line = f.current_line;
+        f.current_line = d.location.l1;
+        f.current_collumn = d.location.c1;
     case Directive_Import;
         print( f, "#import" );
 
@@ -2314,30 +2358,32 @@ print_directive :: ( f: *Jai_Formatter, d: *$T, no_semicolon := false )
 
     case Directive_Module_Parameters;
         print( f, "#module_parameters" );
-        if d.module_parameters
+        if d.has_module_parameters
         {
             begin_arguments( f );
             open_paren( f );
-            comma_separated_node_list( f, d.module_parameters );
+            if d.module_parameters then comma_separated_node_list( f, d.module_parameters );
             close_paren( f );
             end_arguments( f );
         }
 
-        if d.program_parameters
+        if d.has_program_parameters
         {
-            if !d.module_parameters
-            {
-                open_paren( f, false );
-                close_paren( f, false );
-            }
             begin_arguments( f );
             open_paren( f );
-            comma_separated_node_list( f, d.program_parameters );
+            if d.program_parameters then comma_separated_node_list( f, d.program_parameters );
             close_paren( f );
             end_arguments( f );
         }
 
-        semicolon( f );
+        if d.body
+        {
+            print_node( f, d.body );
+        }
+        else
+        {
+            if !no_semicolon then semicolon( f );
+        }
 
     case Directive_Placeholder;
         print( f, "#placeholder " );
@@ -2557,6 +2603,7 @@ standalone_expression :: ( e: *Node ) -> bool
 {
     return parent_is( e, .BLOCK ) ||
            parent_is( e, .CASE ) ||
+           parent_is( e, .DIRECTIVE_SCOPE ) ||
            parent_is( e, .IF ) ||
            parent_is( e, .FOR ) ||
            parent_is( e, .WHILE ) ||
