@@ -37,6 +37,7 @@ multiline_array_literal_end_on_new_line     false
 multiline_struct_literal_end_on_new_line    false 
 
 ignore_path   modules
+ignore_path   E:/Tools/jai
 # ignore_path   test_code.jai
 # ignore_path   main.jai
 # ignore_path   module.jai

@@ -185,9 +185,16 @@ Formatter_Status :: enum
     SKIPPED;
 }
 
+absolute_path :: ( path: string ) -> string
+{
+    result := get_absolute_path( path,, temp );
+    return replace( result, "\\", "/",, temp );
+}
+
 should_skip_file :: ( f: *Jai_Formatter, file: string ) -> bool
 {
-    path := parse_path( file,, temp );
+    absolute := absolute_path( file );
+    path := parse_path( absolute,, temp );
     for ignored: f.ignored_paths
     {
         if ignored.is_directory
@@ -285,7 +292,7 @@ load_config :: ( file: string ) -> Formatter_Config
 
         if key == "ignore_path"
         {
-            value = replace( value, "\\", "/",, temp );
+            value = absolute_path( value );
             temp_path := parse_path( value,, temp );
             p: Formatter_Path;
             p.p = copy_to_permanent( temp_path );
