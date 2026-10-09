@@ -2101,10 +2101,18 @@ print_directive :: ( f: *Jai_Formatter, d: *$T, no_semicolon := false )
         print( f, "#string" );
         if d.cr then print( f, ",cr" );
         if d.escape_percent then print( f, ",\\\%" );
-        print( f, " %", d.identifier );
+        print( f, " %\n", d.identifier );
         // NOTE: strings can have % in them so this "%" makes sure that the actual string value is passed to print as one of the var args and not as the format string.
         print( f, "%", d.string_value );
+
+        // NOTE: If the #string is part of a declaration we want to align the end identifier to the begining of the declaration. In other cases we align the end identifier to the begining of #string.
+        indent( f );
+        if parent_is( d, .DECLARATION )
+        {
+            remove_spaces( f, f.alignments[ f.alignments.count - 1 ].amount );
+        }
         print( f, "%", d.identifier );
+
         f.previous_line = f.current_line;
         f.current_line = d.location.l1;
         f.current_collumn = d.location.c1;

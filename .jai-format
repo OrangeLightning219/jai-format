@@ -39,6 +39,7 @@ procedure_call_trailing_comma_mode          MULTILINE
 
 ignore_path   modules
 ignore_path   E:/Tools/jai
+
 # ignore_path   test_code.jai
 # ignore_path   main.jai
 # ignore_path   module.jai
