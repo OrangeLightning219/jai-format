@@ -570,7 +570,7 @@ print_block :: ( f: *Jai_Formatter, b: *Block, is_modify := false )
     single_line := b.location.l0 == b.location.l1;
     on_new_line: bool;
     parent_is_lambda_or_code := parent_is( b, .QUICK_LAMBDA ) || parent_is( b, .DIRECTIVE_CODE );
-    parent_is_block := parent_is( b, .BLOCK );
+    first_in_case := parent_is( b, .CASE ) && b.parent.( *Case ).members[ 0 ] == b;
 
     if parent_is_lambda_or_code
     {
@@ -584,7 +584,8 @@ print_block :: ( f: *Jai_Formatter, b: *Block, is_modify := false )
         on_new_line = b.parent != null &&
                       f.braces_on_new_line &&
                       ( ( !same_line_as_parent && single_line ) ||
-                        ( !single_line && same_line_as_parent ) );
+                        ( !single_line && same_line_as_parent ) ||
+                        first_in_case );
     }
 
     if b.no_aoc
@@ -594,7 +595,8 @@ print_block :: ( f: *Jai_Formatter, b: *Block, is_modify := false )
 
     maybe_print_new_line( f, on_new_line );
     space_already_added := f.previous_print_type == .SPACE;
-    maybe_print_space( f, !parent_is_block && !space_already_added && ( !f.braces_on_new_line || ( single_line && !on_new_line ) ) );
+    parent_is_block_or_case := parent_is( b, .BLOCK ) || parent_is( b, .CASE );
+    maybe_print_space( f, !parent_is_block_or_case && !space_already_added && ( !f.braces_on_new_line || ( single_line && !on_new_line ) ) );
 
     if on_new_line
     {
@@ -1537,14 +1539,16 @@ print_case :: ( f: *Jai_Formatter, c: *Case )
     if !is_empty
     {
         first_member_on_same_line := c.members[ 0 ].location.l0 == c.location.l0;
-        f.indent_level += 1;
+        first_member_is_block := node_is( c.members[ 0 ], .BLOCK );
+
+        if !first_member_is_block then f.indent_level += 1;
         maybe_print_new_line( f, !all_on_same_line && first_member_on_same_line, should_indent = true );
         for c.members
         {
             print_node( f, it );
             maybe_print_space( f, all_on_same_line && it_index != c.members.count - 1 );
         }
-        f.indent_level -= 1;
+        if !first_member_is_block then f.indent_level -= 1;
     }
 
     if !f.indent_case
@@ -2631,7 +2635,9 @@ insert_new_lines :: ( f: *Jai_Formatter, node: *Node ) -> int
             line_diff := node_line - f.current_line;
             newlines_to_insert := min( line_diff, f.max_empty_lines_to_keep + 1 );
 
-            standalone_block := node_is( node, .BLOCK ) && parent_is( node, .BLOCK );
+            is_block := node_is( node, .BLOCK );
+            block_first_in_case := is_block && parent_is( node, .CASE ) && node.parent.( *Case ).members[ 0 ] == node;
+            standalone_block := is_block && ( parent_is( node, .BLOCK ) || ( parent_is( node, .CASE ) && !block_first_in_case ) );
             // NOTE: Notes and blocks handle new lines on their own
             if node.kind != .NOTE && ( node.kind != .BLOCK || standalone_block )
             {

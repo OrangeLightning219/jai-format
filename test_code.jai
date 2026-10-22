@@ -1,21 +1,16 @@
-Priority_Queue :: struct( type: Type, capacity: int, return_lowest := true )
+if SOMETHING ==
 {
+case X;
+{
+    print();
+
+    {
+    }
+
+    {
+        print();
+    }
+
+    log();
 }
-
-Fixed_Queue :: struct( type: Type, capacity: int )
-{
-}
-
-print_to_builder( *builder,
-                  #string INNER
-                      value %
-                  INNER,
-                  value,
-);
-
-test :: ()
-{
-    test :: #string DONE
-aaa
-    DONE
 }
