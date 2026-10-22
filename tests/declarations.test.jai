@@ -195,7 +195,7 @@ test :: () {
     },
     );
 }
-DONE;
+                      DONE;
 
     return result;
 } @Test
@@ -240,7 +240,7 @@ test :: () {
     a, b, c: int = 1, 2, 3;
     a, b, c: int = test(1, 2, 3);
 }
-DONE;
+                      DONE;
 
     return result;
 } @Test
@@ -344,7 +344,32 @@ Test_Tagged_Union :: union tag: Type {
     1 ,, c: string;
     "d" ,, d: string;
 }
-DONE;
+                      DONE;
+
+    return result;
+} @Test
+
+POLYMORPHIC_STRUCT :: #string DONE
+Priority_Queue :: struct( type: Type, capacity: int = 5, return_lowest := true )
+{
+}
+
+Fixed_Queue :: struct( type: Type, capacity: int = 5 )
+{
+}
+DONE
+
+polymorphic_struct :: () -> Test_Parameters
+{
+    using result: Test_Parameters;
+    source_code = POLYMORPHIC_STRUCT;
+    expected_output = #string DONE
+Priority_Queue :: struct(type: Type, capacity: int = 5, return_lowest := true) {
+}
+
+Fixed_Queue :: struct(type: Type, capacity: int = 5) {
+}
+                      DONE;
 
     return result;
 } @Test
