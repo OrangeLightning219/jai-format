@@ -57,7 +57,7 @@ For example:
 - spaces_inside_parens: default = false\
     If true a space will be inserted after `(` and before `)` if there is something between them.
 
-```
+```jai
     true:                           false:
         print( "%\n", "test" );         print("%\n", "test");
 ```
@@ -65,7 +65,7 @@ For example:
 - spaces_inside_brackets: default = false\
     If true a space will be inserted after `[` and before `]` in array subscripts. This option doesn't insert spaces inside array literals.
 
-```
+```jai
     true:                           false:
         a := array[ 0 ];                a := array[0];
 ```
@@ -73,7 +73,7 @@ For example:
 - spaces_inside_literals: default = false\
     If true a space will be inserted inside struct and array literals. 
 
-```
+```jai
     true:                           false:
         a := Struct.{ 1, 2, 3 };        a := Struct.{1, 2, 3};
         b := int.[ 1, 2, 3 ];           b := int.[1, 2, 3];
@@ -82,14 +82,14 @@ For example:
 - spaces_around_operators: default = true\
     If true spaces will be inserted around binary operators.
 
-```
+```jai
     true:                           false:
         a := 1 + 2;                     a:=1+2;
 ```
 
 - wrap_before_operators: default = false\
     If true a new line will be inserted before the operator in a multiline expression.
-```
+```jai
     true:                           false:
         if a                            if a ||
            || b                            b ||
@@ -109,7 +109,7 @@ For example:
     - `EXACT` - exactly align expressions with their start point
 
     For more alignment examples see `tests/alignment.test.jai`.
-```
+```jai
     DISABLED:                           INDENT_ONLY:                           EXACT:
         test(a, b, c,                       test(a, b, c,                          test(a, b, c, 
         d(a, b,                                 d(a, b,                                 d(a, b,
@@ -128,14 +128,21 @@ For example:
 
 - struct_literal_dot_mode: default = FORCE\
     Specifies wheter to always add or remove a dot before a struct literal.
-```
+```jai
     FORCE:                               REMOVE:
         a := make_struct(.{1, 2, 3});         a := make_struct({1, 2, 3});
 ```
 
+- array_literal_dot_mode: default = FORCE
+    Specifies wheter to always add or remove a dot before an array literal.
+```jai
+    FORCE:                               REMOVE:
+        a: []int = .[1, 2, 3];                a: []int = [1, 2, 3];
+```
+
 - multiline_array_literal_end_on_new_line: default = false\
     Specifies wheter to place the ending bracket of a multiline array literal on a new line.
-```
+```jai
     true:                                false:
         a := int.[1, 2,                      a := int.[1, 2, 
             3, 4                                 3, 4];
@@ -144,7 +151,7 @@ For example:
 
 - multiline_struct_literal_end_on_new_line: default = false\
     Specifies wheter to place the ending bracket of a multiline struct literal on a new line.
-```
+```jai
     true:                                false:
         a := Struct.{1, 2,                   a := Struct.{1, 2, 
             3, 4                              3, 4};
@@ -159,7 +166,7 @@ For example:
     - `ALWAYS` - add the trailing comma to every nonempty call.
     - `MULTILINE` - add the trailing comma only when the formatted call contains a line break.
 
-```
+```jai
     NEVER:             ALWAYS:              MULTILINE:
         call(value);       call(value,);       call(
                                                    value,
@@ -174,7 +181,7 @@ For example:
     - `FORCE_ADD` - always add braces to single line statements
     - `FORCE_REMOVE` - always remove braces from single line statements
     
-```
+```jai
     DONT_MODIFY:                           FORCE_ADD:                           FORCE_REMOVE:
         if condition {                         if condition {                       if condition
             print("true");                         print("true");                       print("true");
@@ -191,7 +198,7 @@ For example:
     - `NEW_LINE` - always add new line before single line statements
     - `SAME_LINE` - always remove new line before single line statements
     
-```
+```jai
     DONT_MODIFY:                           NEW_LINE:                     SAME_LINE:
         if condition                           if condition                  if condition print("true");
             print("true");                         print("true");            else print("false");
@@ -202,7 +209,7 @@ For example:
 - single_statement_double_space: default = false\
     If true two spaces will be added before single statements in control flow expressions (`if`, `for`, `while`).
 
-```
+```jai
     true:                           false:
         if true  print("true");         if true print("true");
 ```
@@ -212,7 +219,7 @@ For example:
     There is one exception to this option. If a opening and closing braces are on the same line the block will be kept as is.\
     For example `if true {print("true");}` will remain all on one line.
 
-```
+```jai
     true:                           false:
         if true                         if true {
         {                               }
@@ -224,7 +231,7 @@ For example:
     This setting also applies to `#code` blocks.\
     This option ignores the braces_on_new_line option.
 
-```
+```jai
     true:                           false:
         a :: (x, y) =>                  a :: (x, y) => {
         {                               }
@@ -234,7 +241,7 @@ For example:
 - else_on_new_line: default = false\
     If true the else keyword will be placed on a new line after the closing brace.
 
-```
+```jai
     true:                           false:
         if true {                       if true {
         }                               } else {
@@ -245,7 +252,7 @@ For example:
 - indent_case: default = false\
     If true case statements will be indented one level instead of staying at the same indentation level as the if keyword.
 
-```
+```jai
     true:                           false:
         if a == {                       if a == {
             case 1;                     case 1;
@@ -257,7 +264,7 @@ For example:
     If true multiple returns will always be surrounded with parenthesis.\
     If this option is set to false the formatter will not remove the parenthesis that are already there.
 
-```
+```jai
     true:                           false:
         a :: () -> (int, bool)          a :: ()  -> int, bool
 ```
@@ -265,7 +272,7 @@ For example:
     If true a space will be added after the // if there isn't already one.\
     The formatter will not trim the leading whitespace in the comments.
 
-```
+```jai
     true:                           false:
         // comment                      //comment
 ```
@@ -273,7 +280,7 @@ For example:
     If true whitespace before single line comments at the end of the line will be kept as is.\
     Currently this option only works if `indent_mode` is set to `SPACES`.
 
-```
+```jai
     true:                                           false:
         print("asd");    // aligned comment             print("asd"); // comment
         print("asdzxc"); // aligned comment             print("asdzxc"); // comment
@@ -282,7 +289,7 @@ For example:
     Maximum amount of empty lines that will be kept when formatting.\
     Empty lines at the beginning of a scope will be removed regardless of what this option is set to.\
     For example:
-```
+```jai
     if true {                           if true {
                                             print("true");
         print("true");    --------->    }
@@ -292,7 +299,7 @@ For example:
 - space_after_cast: default = false\
     If true a space will be added after a cast
     For example:
-```
+```jai
     true:                           false:
         a := cast(u16) 5;               a := cast(u16)5;
 ```
@@ -300,7 +307,7 @@ For example:
 - space_after_for_reverse: default = false\
     If true a space will be added after the `<` for modifier
     For example:
-```
+```jai
     true:                           false:
         for < items {}                  for <items {}
 ```
@@ -314,7 +321,7 @@ For example:
 - tab_width: default = 4\
     Set this to the tab width you use in your editor. This option is only used for `EXACT` alignment mode to allow precise alignment by mixing tabs and spaces.\
     For example:
-```
+```jai
 ____if ( a > 1 && a < 5 ) ||
 ____...( a > 8 && a < 10 )
 ^    ^

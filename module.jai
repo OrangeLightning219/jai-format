@@ -28,6 +28,7 @@ Formatter_Config :: struct
     brackets_alignment_mode := Alignment_Mode.NOT_SET;
     struct_literal_alignment_mode := Alignment_Mode.NOT_SET;
     struct_literal_dot_mode := Struct_Literal_Dot_Mode.FORCE;
+    array_literal_dot_mode := Array_Literal_Dot_Mode.FORCE;
     multiline_array_literal_end_on_new_line := false;
     multiline_struct_literal_end_on_new_line := false;
     procedure_call_trailing_comma_mode := Procedure_Call_Trailing_Comma_Mode.MULTILINE;
@@ -77,6 +78,12 @@ Single_Statement_Line_Mode :: enum
 }
 
 Struct_Literal_Dot_Mode :: enum
+{
+    FORCE;
+    REMOVE;
+}
+
+Array_Literal_Dot_Mode :: enum
 {
     FORCE;
     REMOVE;
@@ -1177,10 +1184,14 @@ print_literal :: ( f: *Jai_Formatter, l: *Literal )
         if array_info.element_type
         {
             print_node( f, array_info.element_type );
+            print( f, "." );
+        }
+        else if f.array_literal_dot_mode == .FORCE
+        {
+            print( f, "." );
         }
 
         is_empty := array_info.elements.count == 0;
-        print( f, "." );
 
         multiline := l.location.l0 != l.location.l1;
         multiline_new_line := multiline && f.multiline_array_literal_end_on_new_line;
@@ -1214,11 +1225,6 @@ print_literal :: ( f: *Jai_Formatter, l: *Literal )
     case .STRUCT;
         struct_info := l.struct_literal_info;
 
-        if struct_info.type
-        {
-            print_node( f, struct_info.type );
-        }
-
         is_empty := struct_info.body.count == 0;
 
         multiline := l.location.l0 != l.location.l1;
@@ -1226,28 +1232,21 @@ print_literal :: ( f: *Jai_Formatter, l: *Literal )
         // NOTE: Same thing as with array literals
         align_end := f.struct_literal_alignment_mode == .EXACT && multiline_new_line;
 
-        if !struct_info.type
+        if struct_info.type
         {
-            if f.struct_literal_dot_mode == .FORCE
-            {
-                print( f, "." );
-            }
-
-            if align_end
-            {
-                push_alignment( f, f.struct_literal_alignment_mode );
-            }
-            print( f, "{" );
+            print_node( f, struct_info.type );
+            print( f, "." );
         }
-        else
+        else if f.struct_literal_dot_mode == .FORCE
         {
             print( f, "." );
-            if align_end
-            {
-                push_alignment( f, f.struct_literal_alignment_mode );
-            }
-            print( f, "{" );
         }
+
+        if align_end
+        {
+            push_alignment( f, f.struct_literal_alignment_mode );
+        }
+        print( f, "{" );
 
         maybe_print_space( f, f.spaces_inside_literals && !is_empty );
 

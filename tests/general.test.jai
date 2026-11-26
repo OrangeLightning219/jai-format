@@ -80,7 +80,7 @@ test :: () {
     a := list[ 0 ] + list[ 3 ];
     b := list2d[ 0 ][ 2 ];
 }
-DONE;
+                      DONE;
 
     return result;
 } @Test
@@ -107,7 +107,7 @@ test :: (a: int, b: float) -> bool
         return test(a, test(c, 0));
     }
 }
-DONE;
+                      DONE;
 
     return result;
 } @Test
@@ -129,7 +129,7 @@ test::(a: int, b: float) -> bool {
         return test(a, test(c, 0));
     }
 }
-DONE;
+                      DONE;
 
     return result;
 } @Test
@@ -151,47 +151,58 @@ test :: ( a: int, b: float ) -> bool {
         return test( a, test( c, 0 ) );
     }
 }
-DONE;
+                      DONE;
 
     return result;
 } @Test
 
-STRUCT_LITERALS :: #string DONE
+STRUCT_AND_ARRAY_LITERALS :: #string DONE
 test :: () {
     a := Struct.{1, 2, 3};
     a := make_struct(.{1, 2, 3});
     a := make_struct({1, 2, 3});
+
+    a := int.[1, 2, 3];
+    a: []int = .[1, 2, 3];
 }
 DONE
 
-struct_literals_force_dot :: () -> Test_Parameters
+struct_and_array_literals_force_dot :: () -> Test_Parameters
 {
     using result: Test_Parameters;
     config.struct_literal_dot_mode = .FORCE;
-    source_code = STRUCT_LITERALS;
+    config.array_literal_dot_mode = .FORCE;
+    source_code = STRUCT_AND_ARRAY_LITERALS;
     expected_output = #string DONE
 test :: () {
     a := Struct.{1, 2, 3};
     a := make_struct(.{1, 2, 3});
     a := make_struct(.{1, 2, 3});
+
+    a := int.[1, 2, 3];
+    a: []int = .[1, 2, 3];
 }
-DONE;
+                      DONE;
 
     return result;
 } @Test
 
-struct_literals_remove_dot :: () -> Test_Parameters
+struct_and_array_literals_remove_dot :: () -> Test_Parameters
 {
     using result: Test_Parameters;
     config.struct_literal_dot_mode = .REMOVE;
-    source_code = STRUCT_LITERALS;
+    config.array_literal_dot_mode = .REMOVE;
+    source_code = STRUCT_AND_ARRAY_LITERALS;
     expected_output = #string DONE
 test :: () {
     a := Struct.{1, 2, 3};
     a := make_struct({1, 2, 3});
     a := make_struct({1, 2, 3});
+
+    a := int.[1, 2, 3];
+    a: []int = [1, 2, 3];
 }
-DONE;
+                      DONE;
 
     return result;
 } @Test
@@ -232,7 +243,7 @@ test :: () {
     (.*)cast(**u8)offset = ptr;
     print("line: %", #location().line_number);
 }
-DONE;
+                      DONE;
 
     return result;
 } @Test

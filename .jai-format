@@ -10,6 +10,7 @@ quick_lambda_brace_on_new_line              false
 else_on_new_line                            true
 
 struct_literal_dot_mode                     FORCE 
+array_literal_dot_mode                      FORCE 
 
 single_statement_brace_mode                 DONT_MODIFY
 single_statement_line_mode                  SAME_LINE
