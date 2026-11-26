@@ -2108,9 +2108,9 @@ print_directive :: ( f: *Jai_Formatter, d: *$T, no_semicolon := false )
         // NOTE: strings can have % in them so this "%" makes sure that the actual string value is passed to print as one of the var args and not as the format string.
         print( f, "%", d.string_value );
 
-        // NOTE: If the #string is part of a declaration we want to align the end identifier to the begining of the declaration. In other cases we align the end identifier to the begining of #string.
+        // NOTE: If the #string is part of a declaration or an assignment we want to align the end identifier to the begining of the declaration. In other cases we align the end identifier to the begining of #string.
         indent( f );
-        if parent_is( d, .DECLARATION )
+        if parent_is( d, .DECLARATION ) || parent_is( d, .BINARY_OPERATION )
         {
             remove_spaces( f, f.alignments[ f.alignments.count - 1 ].amount );
         }

@@ -80,7 +80,7 @@ test :: () {
     a := list[ 0 ] + list[ 3 ];
     b := list2d[ 0 ][ 2 ];
 }
-                      DONE;
+    DONE;
 
     return result;
 } @Test
@@ -107,7 +107,7 @@ test :: (a: int, b: float) -> bool
         return test(a, test(c, 0));
     }
 }
-                      DONE;
+    DONE;
 
     return result;
 } @Test
@@ -129,7 +129,7 @@ test::(a: int, b: float) -> bool {
         return test(a, test(c, 0));
     }
 }
-                      DONE;
+    DONE;
 
     return result;
 } @Test
@@ -151,7 +151,7 @@ test :: ( a: int, b: float ) -> bool {
         return test( a, test( c, 0 ) );
     }
 }
-                      DONE;
+    DONE;
 
     return result;
 } @Test
@@ -182,7 +182,7 @@ test :: () {
     a := int.[1, 2, 3];
     a: []int = .[1, 2, 3];
 }
-                      DONE;
+    DONE;
 
     return result;
 } @Test
@@ -202,7 +202,7 @@ test :: () {
     a := int.[1, 2, 3];
     a: []int = [1, 2, 3];
 }
-                      DONE;
+    DONE;
 
     return result;
 } @Test
@@ -243,7 +243,7 @@ test :: () {
     (.*)cast(**u8)offset = ptr;
     print("line: %", #location().line_number);
 }
-                      DONE;
+    DONE;
 
     return result;
 } @Test

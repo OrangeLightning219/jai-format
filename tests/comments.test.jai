@@ -103,7 +103,7 @@ another explanation
 another explanation
 another explanation
 */
-DONE;
+    DONE;
 
     return result;
 } @Test
@@ -149,7 +149,7 @@ test :: () {         // comment 0
     print("asd");      // comment 11
     print("asd");    // comment 12
 }
-DONE;
+    DONE;
 
     return result;
 } @Test

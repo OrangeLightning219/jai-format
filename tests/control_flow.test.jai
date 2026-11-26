@@ -40,7 +40,7 @@ test :: () {
         print("true");
     }
 }
-                      DONE;
+    DONE;
 
     return result;
 } @Test
@@ -108,7 +108,7 @@ test :: () {
 
     for things.* {}
 }
-                      DONE;
+    DONE;
 
     return result;
 } @Test
@@ -173,7 +173,7 @@ test :: () {
         print("asdasd");
     }
 }
-                      DONE;
+    DONE;
 
     return result;
 } @Test
@@ -228,7 +228,7 @@ test :: () {
     #if #run factorial(5) > 100 {}
     if true #run print("run");
 }
-                      DONE;
+    DONE;
 
     return result;
 } @Test
@@ -289,7 +289,7 @@ test :: () {
 
     parameters := ifx params then params.* else .{};
 }
-                      DONE;
+    DONE;
 
     return result;
 } @Test
@@ -384,7 +384,7 @@ test :: () {
     while true {print("true");}
     while true {print("true");}
 }
-                      DONE;
+    DONE;
 
     return result;
 } @Test
@@ -452,7 +452,7 @@ test :: () {
     while true
         print("true");
 }
-                      DONE;
+    DONE;
 
     return result;
 } @Test
@@ -541,7 +541,7 @@ test :: () {
     while true
         print(it);
 }
-                      DONE;
+    DONE;
 
     return result;
 } @Test
@@ -622,7 +622,7 @@ test :: () {
     while true print(it);
     while true print(it);
 }
-                      DONE;
+    DONE;
 
     return result;
 } @Test
@@ -652,7 +652,7 @@ test :: () {
 
     while true  print(it);
 }
-                      DONE;
+    DONE;
 
     return result;
 } @Test
@@ -693,7 +693,7 @@ test :: () {
         case;
     }
 }
-                      DONE;
+    DONE;
 
     return result;
 } @Test
@@ -720,7 +720,7 @@ test :: ()
         case;
     }
 }
-                      DONE;
+    DONE;
 
     return result;
 } @Test
@@ -746,7 +746,7 @@ test :: ()
     case;
     }
 }
-                      DONE;
+    DONE;
 
     return result;
 } @Test

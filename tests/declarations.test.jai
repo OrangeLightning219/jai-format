@@ -195,7 +195,7 @@ test :: () {
     },
     );
 }
-                      DONE;
+    DONE;
 
     return result;
 } @Test
@@ -240,7 +240,7 @@ test :: () {
     a, b, c: int = 1, 2, 3;
     a, b, c: int = test(1, 2, 3);
 }
-                      DONE;
+    DONE;
 
     return result;
 } @Test
@@ -344,7 +344,7 @@ Test_Tagged_Union :: union tag: Type {
     1 ,, c: string;
     "d" ,, d: string;
 }
-                      DONE;
+    DONE;
 
     return result;
 } @Test
@@ -369,7 +369,7 @@ Priority_Queue :: struct(type: Type, capacity: int = 5, return_lowest := true) {
 
 Fixed_Queue :: struct(type: Type, capacity: int = 5) {
 }
-                      DONE;
+    DONE;
 
     return result;
 } @Test

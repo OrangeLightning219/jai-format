@@ -1,16 +1,6 @@
-if SOMETHING ==
+test :: ()
 {
-case X;
-{
-    print();
-
-    {
-    }
-
-    {
-        print();
-    }
-
-    log();
-}
+    a = #string DONE
+    asdasdasd
+    DONE;
 }

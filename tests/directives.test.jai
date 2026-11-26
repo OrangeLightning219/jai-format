@@ -32,7 +32,7 @@ module_parameters_with_body :: () -> Test_Parameters
         METAL;
     }
 }
-DONE;
+    DONE;
     return result;
 } @Test
 
